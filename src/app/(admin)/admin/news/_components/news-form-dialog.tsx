@@ -1,0 +1,263 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { toast } from "sonner";
+import { useT } from "@/shared/lib/i18n/client";
+import {
+  LiyonDialog,
+  LiyonDialogHeader,
+  LiyonDialogBody,
+  LiyonDialogFooter,
+  LiyonField,
+  LiyonSelect,
+} from "@/shared/components/liyon";
+import { Button } from "@/components/ui/button";
+import type { NewsArticleDto, NewsCategoryDto } from "@/features/news";
+import { createNewsArticleAction, updateNewsArticleAction } from "@/features/news/actions";
+
+interface Props {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  article: NewsArticleDto | null;
+  categories: NewsCategoryDto[];
+  onSaved: (saved: NewsArticleDto) => void;
+}
+
+export function NewsFormDialog({ open, onOpenChange, article, categories, onSaved }: Props) {
+  if (!open) return null;
+  return (
+    <NewsFormDialogInner
+      key={article?.id ?? "create"}
+      open={open}
+      onOpenChange={onOpenChange}
+      article={article}
+      categories={categories}
+      onSaved={onSaved}
+    />
+  );
+}
+
+function NewsFormDialogInner({ open, onOpenChange, article, categories, onSaved }: Props) {
+  const t = useT();
+  const [isPending, startTransition] = useTransition();
+
+  const [titleTh, setTitleTh] = useState(article?.titleTh ?? "");
+  const [titleEn, setTitleEn] = useState(article?.titleEn ?? "");
+  const [slug, setSlug] = useState(article?.slug ?? "");
+  const [categoryId, setCategoryId] = useState(article?.categoryId ?? "");
+  const [summaryTh, setSummaryTh] = useState(article?.summaryTh ?? "");
+  const [summaryEn, setSummaryEn] = useState(article?.summaryEn ?? "");
+  const [contentTh, setContentTh] = useState(article?.contentTh ?? "");
+  const [contentEn, setContentEn] = useState(article?.contentEn ?? "");
+  const [coverImageUrl, setCoverImageUrl] = useState(article?.coverImageUrl ?? "");
+  const [status, setStatus] = useState<"DRAFT" | "PUBLISHED" | "ARCHIVED">(
+    article?.status === "PUBLISHED" ? "PUBLISHED" : article?.status === "ARCHIVED" ? "ARCHIVED" : "DRAFT"
+  );
+  const [isPinned, setIsPinned] = useState(article?.isPinned ?? false);
+
+  const handleTitleChange = (val: string) => {
+    setTitleTh(val);
+    if (!article && !slug) {
+      const clean = val.toLowerCase().trim().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-");
+      if (clean) setSlug(clean);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!titleTh || !slug || !contentTh) return;
+
+    startTransition(async () => {
+      const payload = {
+        categoryId: categoryId || null,
+        titleTh,
+        titleEn: titleEn || null,
+        slug,
+        summaryTh: summaryTh || null,
+        summaryEn: summaryEn || null,
+        contentTh,
+        contentEn: contentEn || null,
+        coverImageUrl: coverImageUrl || null,
+        status,
+        isPinned,
+        pinnedOrder: 0,
+      };
+
+      if (article) {
+        const res = await updateNewsArticleAction({
+          id: article.id,
+          ...payload,
+        });
+
+        if (res.ok) {
+          toast.success(t("news.saveSuccess"));
+          onSaved(res.data);
+          onOpenChange(false);
+        } else {
+          toast.error(res.error?.message ?? "Failed to update article");
+        }
+      } else {
+        const res = await createNewsArticleAction(payload);
+
+        if (res.ok) {
+          toast.success(t("news.saveSuccess"));
+          onSaved(res.data);
+          onOpenChange(false);
+        } else {
+          toast.error(res.error?.message ?? "Failed to create article");
+        }
+      }
+    });
+  };
+
+  return (
+    <LiyonDialog open={open} onOpenChange={onOpenChange} wide>
+      <form onSubmit={handleSubmit}>
+        <LiyonDialogHeader
+          title={article ? t("news.edit") : t("news.create")}
+          description={t("news.desc")}
+        />
+
+        <LiyonDialogBody className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <LiyonField label={t("news.field.titleTh")}>
+              <input
+                type="text"
+                required
+                value={titleTh}
+                onChange={(e) => handleTitleChange(e.target.value)}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+                placeholder="เช่น ประกาศเปิดรับสมัครนักศึกษาใหม่"
+              />
+            </LiyonField>
+
+            <LiyonField label={t("news.field.titleEn")}>
+              <input
+                type="text"
+                value={titleEn}
+                onChange={(e) => setTitleEn(e.target.value)}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+                placeholder="e.g. Admissions Announcement"
+              />
+            </LiyonField>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <LiyonField label={t("news.field.slug")}>
+              <input
+                type="text"
+                required
+                value={slug}
+                onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background font-mono focus:outline-none focus:ring-2 focus:ring-primary/20"
+                placeholder="e.g. admissions-2027"
+              />
+            </LiyonField>
+
+            <LiyonField label={t("news.field.category")}>
+              <LiyonSelect
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+              >
+                <option value="">{t("news.field.categorySelect")}</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nameTh}
+                  </option>
+                ))}
+              </LiyonSelect>
+            </LiyonField>
+          </div>
+
+          <LiyonField label={t("news.field.coverImageUrl")}>
+            <input
+              type="url"
+              value={coverImageUrl}
+              onChange={(e) => setCoverImageUrl(e.target.value)}
+              className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+              placeholder="https://example.com/image.jpg"
+            />
+          </LiyonField>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <LiyonField label={t("news.field.status")}>
+              <LiyonSelect
+                value={status}
+                onChange={(e) => setStatus(e.target.value as "DRAFT" | "PUBLISHED" | "ARCHIVED")}
+              >
+                <option value="DRAFT">{t("news.status.DRAFT")}</option>
+                <option value="PUBLISHED">{t("news.status.PUBLISHED")}</option>
+                <option value="ARCHIVED">{t("news.status.ARCHIVED")}</option>
+              </LiyonSelect>
+            </LiyonField>
+
+            <div className="flex items-center gap-2 pt-6">
+              <input
+                type="checkbox"
+                id="isPinned"
+                checked={isPinned}
+                onChange={(e) => setIsPinned(e.target.checked)}
+                className="rounded border-border text-primary focus:ring-primary h-4 w-4"
+              />
+              <label htmlFor="isPinned" className="text-xs font-medium text-foreground cursor-pointer">
+                {t("news.field.isPinned")}
+              </label>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <LiyonField label={t("news.field.summaryTh")}>
+              <textarea
+                rows={2}
+                value={summaryTh}
+                onChange={(e) => setSummaryTh(e.target.value)}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+                placeholder="สรุปเนื้อหาข่าวสั้นๆ (ภาษาไทย)"
+              />
+            </LiyonField>
+
+            <LiyonField label={t("news.field.summaryEn")}>
+              <textarea
+                rows={2}
+                value={summaryEn}
+                onChange={(e) => setSummaryEn(e.target.value)}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+                placeholder="Summary snippet (English)"
+              />
+            </LiyonField>
+          </div>
+
+          <LiyonField label={t("news.field.contentTh")}>
+            <textarea
+              rows={6}
+              required
+              value={contentTh}
+              onChange={(e) => setContentTh(e.target.value)}
+              className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 font-sans"
+              placeholder="เนื้อหาข่าวแบบละเอียด (ภาษาไทย)..."
+            />
+          </LiyonField>
+
+          <LiyonField label={t("news.field.contentEn")}>
+            <textarea
+              rows={4}
+              value={contentEn}
+              onChange={(e) => setContentEn(e.target.value)}
+              className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 font-sans"
+              placeholder="Full article content (English)..."
+            />
+          </LiyonField>
+        </LiyonDialogBody>
+
+        <LiyonDialogFooter>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
+            {t("common.cancel")}
+          </Button>
+          <Button type="submit" disabled={isPending}>
+            {isPending ? t("common.saving") : t("common.save")}
+          </Button>
+        </LiyonDialogFooter>
+      </form>
+    </LiyonDialog>
+  );
+}
