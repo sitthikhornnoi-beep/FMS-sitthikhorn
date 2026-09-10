@@ -26,8 +26,8 @@ export default async function PublicNewsPage({ searchParams }: NewsPageProps) {
         </h1>
         <p className="text-base text-muted-foreground">
           {locale === "th"
-            ? "ศูนย์รวมข่าวประชาสัมพันธ์ กิจกรรม และประกาศสำคัญของคณะวิทยาการจัดการ"
-            : "All announcements, news updates, and press releases from the faculty"}
+            ? "ศูนย์รวมข่าวประชาสัมพันธ์ กิจกรรม และประกาศสำคัญของหลักสูตรรัฐศาสตรบัณฑิต"
+            : "Official news, announcements, and academic updates of Bachelor of Political Science Program"}
         </p>
       </div>
 

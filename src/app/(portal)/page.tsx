@@ -18,15 +18,15 @@ export default async function PortalHomePage() {
           <div className="text-center max-w-3xl mx-auto mb-10 space-y-3">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-primary/15 text-primary border border-primary/20">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>{locale === "th" ? "ยินดีต้อนรับสู่เว็บไซต์คณะ" : "Welcome to Faculty Portal"}</span>
+              <span>{locale === "th" ? "ยินดีต้อนรับสู่เว็บไซต์หลักสูตร" : "Welcome to Program Portal"}</span>
             </div>
             <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-foreground leading-tight">
-              {locale === "th" ? "คณะวิทยาการจัดการ" : "Faculty of Management Sciences"}
+              {locale === "th" ? "หลักสูตรรัฐศาสตรบัณฑิต" : "Bachelor of Political Science Program"}
             </h1>
             <p className="text-base sm:text-lg text-muted-foreground">
               {locale === "th"
-                ? "ศูนย์รวมแห่งความเป็นเลิศทางวิชาการ นวัตกรรมธุรกิจดิจิทัล และการพัฒนาผู้นำแห่งอนาคต"
-                : "Center of Academic Excellence, Digital Business Innovation, and Future Leadership"}
+                ? "ศูนย์รวมแห่งความเป็นเลิศทางวิชาการ การปกครอง นโยบายสาธารณะ และการพัฒนาผู้นำแห่งอนาคต"
+                : "Center of Academic Excellence, Governance, Public Policy, and Future Leadership"}
             </p>
           </div>
 
@@ -171,7 +171,7 @@ export default async function PortalHomePage() {
         <div className="rounded-3xl border border-border/80 bg-gradient-to-r from-card via-background to-card p-8 sm:p-12 shadow-sm">
           <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
             <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
-              {locale === "th" ? "บริการและพันธกิจของคณะ" : "Faculty Services & Missions"}
+              {locale === "th" ? "บริการและพันธกิจของหลักสูตร" : "Program Services & Missions"}
             </h2>
             <p className="text-sm text-muted-foreground">
               {locale === "th" ? "เข้าถึงระบบสารสนเทศและการบริการต่างๆ อย่างสะดวกรวดเร็ว" : "Fast and accessible academic services"}

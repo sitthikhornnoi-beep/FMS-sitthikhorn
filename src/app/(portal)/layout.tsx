@@ -34,10 +34,10 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
             </div>
             <div>
               <div className="font-bold text-base sm:text-lg tracking-tight leading-none text-foreground group-hover:text-primary transition-colors">
-                {locale === "th" ? "คณะวิทยาการจัดการ" : "Faculty of Management Sciences"}
+                {locale === "th" ? "หลักสูตรรัฐศาสตรบัณฑิต" : "Bachelor of Political Science Program"}
               </div>
               <div className="text-xs text-muted-foreground leading-none mt-1">
-                {locale === "th" ? "ระบบบริการข้อมูลและสารสนเทศคณะ" : "Faculty Web Platform"}
+                {locale === "th" ? "ระบบบริการข้อมูลและสารสนเทศหลักสูตร" : "Academic Program Web Platform"}
               </div>
             </div>
           </Link>
@@ -101,12 +101,12 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
             <div className="space-y-3 md:col-span-2">
               <div className="flex items-center gap-2 font-bold text-foreground text-lg">
                 <GraduationCap className="w-5 h-5 text-primary" />
-                <span>{locale === "th" ? "คณะวิทยาการจัดการ" : "Faculty of Management Sciences"}</span>
+                <span>{locale === "th" ? "หลักสูตรรัฐศาสตรบัณฑิต" : "Bachelor of Political Science Program"}</span>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed max-w-md">
                 {locale === "th"
-                  ? "มุ่งผลิตบัณฑิตนักปฏิบัติที่มีคุณธรรม เชี่ยวชาญเทคโนโลยี และพร้อมขับเคลื่อนเศรษฐกิจดิจิทัลระดับสากล"
-                  : "Empowering visionary leaders and innovative practitioners for the modern digital economy."}
+                  ? "มุ่งผลิตบัณฑิตนักคิดนักปฏิบัติที่มีคุณธรรม เชี่ยวชาญการบริหารงานรัฐกิจ และพร้อมพัฒนาสังคมสู่ความยั่งยืน"
+                  : "Empowering visionary leaders and innovative practitioners in political science and public administration."}
               </p>
               <div className="text-xs text-muted-foreground pt-2">
                 123 มหาวิทยาลัยนวัตกรรม ถนนวิทยากร ตำบลในเมือง อำเภอเมือง จ.ขอนแก่น 40000<br />
@@ -130,7 +130,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
 
             <div className="space-y-2">
               <h4 className="font-semibold text-foreground text-sm">
-                {locale === "th" ? "ระบบสารสนเทศคณะ" : "Faculty Platforms"}
+                {locale === "th" ? "ระบบสารสนเทศหลักสูตร" : "Program Platforms"}
               </h4>
               <ul className="text-sm space-y-1.5">
                 <li><Link href="/admin/news" className="hover:text-primary transition-colors">{locale === "th" ? "ระบบจัดการข่าวสาร" : "News CMS"}</Link></li>
@@ -143,7 +143,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
           </div>
 
           <div className="border-t border-border/60 mt-8 pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-muted-foreground">
-            <p>© 2026 Faculty of Management Sciences. All rights reserved.</p>
+            <p>© 2026 Bachelor of Political Science Program. All rights reserved.</p>
             <p className="mt-2 sm:mt-0 font-mono text-[11px]">Powered by VibeCore Framework</p>
           </div>
         </div>

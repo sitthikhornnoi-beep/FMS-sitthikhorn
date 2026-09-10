@@ -98,8 +98,8 @@ export function ProgramsDirectory({ initialPrograms, departments }: Props) {
 
           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
             {locale === "th"
-              ? "คณะวิทยาการจัดการ มุ่งเน้นการผลิตบัณฑิตและนักวิจัยที่มีทักษะขั้นสูงด้านคอมพิวเตอร์ เทคโนโลยีสารสนเทศ วิศวกรรมซอฟต์แวร์ และการบริหารรัฐกิจ เพื่อตอบโจทย์อุตสาหกรรมแห่งอนาคต"
-              : "Discover comprehensive degree programs designed to empower the next generation of technologists, software leaders, and public innovators."}
+              ? "หลักสูตรรัฐศาสตรบัณฑิต มุ่งเน้นการผลิตบัณฑิตและนักวิจัยที่มีความรู้ความเชี่ยวชาญด้านการปกครอง นโยบายสาธารณะ และการบริหารรัฐกิจ เพื่อตอบโจทย์การพัฒนาสังคมและประเทศชาติ"
+              : "Discover comprehensive degree curriculum designed to empower the next generation of public leaders, policy analysts, and governance innovators."}
           </p>
         </div>
       </div>

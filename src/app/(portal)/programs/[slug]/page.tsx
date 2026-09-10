@@ -417,7 +417,7 @@ export default async function ProgramDetailPage({ params }: ProgramDetailPagePro
           </h3>
           <p className="text-xs text-muted-foreground leading-relaxed">
             {locale === "th"
-              ? `ติดต่อคณาจารย์และเจ้าหน้าที่ประจำ${program.departmentNameTh || "คณะวิทยาการจัดการ"} เพื่อขอคำปรึกษาด้านการศึกษาและการรับเข้าศึกษา`
+              ? `ติดต่อคณาจารย์และเจ้าหน้าที่ประจำ${program.departmentNameTh || "หลักสูตรรัฐศาสตรบัณฑิต"} เพื่อขอคำปรึกษาด้านการศึกษาและการรับเข้าศึกษา`
               : "Contact academic advisors and department staff for educational guidance and admission inquiries."}
           </p>
         </div>
