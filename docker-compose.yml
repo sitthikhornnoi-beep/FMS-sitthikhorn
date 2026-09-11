@@ -56,6 +56,17 @@ services:
     networks:
       - fms-network
 
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: fms-tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://web:3010
+    depends_on:
+      web:
+        condition: service_healthy
+    networks:
+      - fms-network
+
 volumes:
   postgres_data:
     driver: local
