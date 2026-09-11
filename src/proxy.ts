@@ -13,8 +13,13 @@ export async function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const secureCookie = (process.env.APP_URL ?? "").startsWith("https://");
-  const token = await getToken({ req, secret: process.env.AUTH_SECRET, secureCookie });
+  const isHttps = req.nextUrl.protocol === "https:" || req.headers.get("x-forwarded-proto") === "https";
+  const hasSecureCookie = req.cookies.has("__Secure-authjs.session-token");
+  const secureCookie = hasSecureCookie || isHttps || (process.env.APP_URL ?? "").startsWith("https://");
+  let token = await getToken({ req, secret: process.env.AUTH_SECRET, secureCookie });
+  if (!token) {
+    token = await getToken({ req, secret: process.env.AUTH_SECRET, secureCookie: !secureCookie });
+  }
   const loggedIn = !!token && !token.invalid && !!token.userId;
 
   if (GUEST_ONLY.includes(pathname)) {

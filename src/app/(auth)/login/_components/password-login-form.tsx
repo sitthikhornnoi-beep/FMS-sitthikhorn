@@ -31,8 +31,7 @@ export function PasswordLoginForm() {
       const r = await signIn("credentials", { email, password, redirect: false });
       if (r?.error) toast.error(t("auth.invalidCredentials"));
       else {
-        router.push(safeCallbackUrl(callbackUrl));
-        router.refresh();
+        window.location.href = safeCallbackUrl(callbackUrl);
       }
     } catch {
       toast.error(t("auth.errorRetry"));
