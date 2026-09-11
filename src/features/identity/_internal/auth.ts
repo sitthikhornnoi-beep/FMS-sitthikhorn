@@ -33,6 +33,7 @@ async function homeTenantId(userId: string): Promise<string | null> {
 }
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
+  trustHost: true,
   pages: { signIn: "/login" },
   session: { strategy: "jwt", maxAge: 2 * 24 * 60 * 60, updateAge: 24 * 60 * 60 },
   providers: [
