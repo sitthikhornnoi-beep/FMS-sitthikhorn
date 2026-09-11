@@ -35,6 +35,20 @@ export async function testSmtpAction(input: unknown): Promise<ActionResult<{ suc
       }
     }
 
+    if (data.host.toLowerCase().includes("gmail") && data.user.toLowerCase().endsWith("@app.local")) {
+      return {
+        success: false,
+        error: "admin@app.local คือบัญชีผู้ดูแลระบบ FMS ภายใน ไม่ใช่บัญชีอีเมล Gmail กรุณาระบุบัญชี Gmail จริงของคุณ (เช่น yourname@gmail.com)",
+      };
+    }
+
+    if (pass === "Passw0rd!vibe") {
+      return {
+        success: false,
+        error: "รหัสผ่าน Passw0rd!vibe คือรหัสเข้าเว็บ FMS ไม่ใช่รหัสผ่านแอป 16 หลักของ Gmail กรุณาสร้างรหัสผ่านแอปจาก https://myaccount.google.com/apppasswords",
+      };
+    }
+
     return await verifySmtp(
       {
         host: data.host,

@@ -316,17 +316,22 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
                 label={t("settings.smtpUser")}
                 htmlFor="smtp-user"
                 error={errors["smtp.user"]?.[0]}
-                hint="บัญชี Gmail เช่น name@gmail.com"
+                hint="ระบุบัญชี Gmail จริงของคุณ เช่น yourname@gmail.com"
               >
                 <input
                   id="smtp-user"
                   type="email"
                   value={form.smtp.user}
-                  placeholder="your-email@gmail.com"
+                  placeholder="yourname@gmail.com"
                   onChange={(e) =>
                     setForm((prev) => ({ ...prev, smtp: { ...prev.smtp, user: e.target.value } }))
                   }
                 />
+                {form.smtp.user.toLowerCase().includes("@app.local") && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium">
+                    ⚠️ &quot;{form.smtp.user}&quot; คือบัญชีผู้ใช้ระบบ FMS ไม่ใช่บัญชี Gmail กรุณาใช้อีเมล Gmail จริงของคุณ (เช่น yourname@gmail.com)
+                  </p>
+                )}
               </LiyonField>
 
               <LiyonField
@@ -355,6 +360,11 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                {form.smtp.pass === "Passw0rd!vibe" && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium">
+                    ⚠️ &quot;Passw0rd!vibe&quot; คือรหัสผ่านเข้าเว็บ FMS ไม่ใช่รหัสผ่านแอป Gmail กรุณาใช้รหัสผ่านแอป 16 ตัวอักษรจาก Google
+                  </p>
+                )}
               </LiyonField>
             </div>
 
