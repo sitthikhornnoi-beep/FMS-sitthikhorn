@@ -144,4 +144,14 @@ describe("AdminShell", () => {
     );
     expect(screen.getByText("3")).toBeTruthy();
   });
+
+  it("แสดง brandLogo ที่กำหนดเองแทน SVG เริ่มต้น", () => {
+    render(
+      <AdminShell
+        /* eslint-disable-next-line @next/next/no-img-element */
+        {...baseProps({ brandLogo: <img alt="custom-logo" src="/test-logo.png" /> })}
+      />,
+    );
+    expect(screen.getByAltText("custom-logo")).toBeTruthy();
+  });
 });

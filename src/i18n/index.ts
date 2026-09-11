@@ -5,7 +5,7 @@ import { MESSAGES as sample } from "@/features/sample/messages";
 import { MESSAGES as news } from "@/features/news/messages";
 import { MESSAGES as personnel } from "@/features/personnel/messages";
 import { MESSAGES as booking } from "@/features/booking/messages";
-import { messages as curriculum } from "@/features/curriculum/messages";
+import { MESSAGES as curriculum } from "@/features/curriculum/messages";
 import { MESSAGES as documents } from "@/features/documents/messages";
 
 /** พจนานุกรม UI ทั้งระบบ — feature ใหม่เพิ่มบรรทัด import ที่นี่ · key ต้องไม่ซ้ำข้าม feature */

@@ -1,4 +1,4 @@
-export const messages = {
+export const MESSAGES = {
   "curriculum.nav": { th: "จัดการหลักสูตร", en: "Curriculum" },
   "curriculum.title": { th: "ระบบจัดการหลักสูตร", en: "Curriculum & Programs" },
   "curriculum.subtitle": { th: "จัดการข้อมูลหลักสูตรการศึกษา โครงสร้างหน่วยกิต และแผนการเรียน", en: "Manage academic programs, credit structures, and study plans" },
@@ -43,3 +43,4 @@ export const messages = {
   "perm.curriculum:create": { th: "สร้างและเพิ่มหลักสูตรใหม่", en: "Create new academic programs" },
   "perm.curriculum:manage": { th: "จัดการ แก้ไข ปรับปรุงโครงสร้าง และลบหลักสูตร", en: "Manage, edit, update structures, and delete programs" },
 } as const;
+export const messages = MESSAGES;

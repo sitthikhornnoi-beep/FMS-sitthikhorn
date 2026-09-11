@@ -1,4 +1,5 @@
 import { prisma } from "@/shared/lib/infra/prisma";
+import { getDefaultTenantId } from "@/shared/lib/infra/tenant";
 import { Prisma, type BookingResource } from "@/generated/prisma";
 import type {
   CreateBookingResourceInput,
@@ -51,10 +52,7 @@ export interface BookingDto {
   updatedAt: string;
 }
 
-export async function getDefaultTenantId(): Promise<string> {
-  const tenant = await prisma.tenant.findFirst({ where: { isActive: true }, select: { id: true } });
-  return tenant?.id ?? "";
-}
+export { getDefaultTenantId };
 
 /** ตรวจสอบการจองซ้อนทับ (Double-booking check) */
 export async function checkBookingConflict(

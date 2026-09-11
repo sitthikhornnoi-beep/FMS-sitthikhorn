@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { CURRENT_PATH_HEADER } from "@/shared/lib/security/callback-url";
 
-const PUBLIC_PREFIXES = ["/reset-password/", "/verify-email/", "/api/auth/", "/_next/", "/favicon.ico", "/news", "/personnel", "/booking", "/programs", "/documents"];
+const PUBLIC_PREFIXES = ["/reset-password/", "/verify-email/", "/api/auth/", "/api/health", "/_next/", "/favicon.ico", "/news", "/personnel", "/booking", "/programs", "/documents"];
 const PUBLIC_EXACT = ["/"];
 const GUEST_ONLY = ["/login", "/forgot-password"];
 

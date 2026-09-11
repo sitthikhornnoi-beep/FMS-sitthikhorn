@@ -9,8 +9,8 @@ export interface SeedCoreResult { tenantId: string; roleIds: Record<string, stri
 export async function seedCore(db: PrismaClient, opts: SeedCoreOptions): Promise<SeedCoreResult> {
   const tenant = await db.tenant.upsert({
     where: { code: opts.tenantCode },
-    update: {},
-    create: { code: opts.tenantCode, nameTh: opts.nameTh, nameEn: opts.nameEn, settings: { palette: "blue" } },
+    update: { logoUrl: "/uploads/mcu-logo.png" },
+    create: { code: opts.tenantCode, nameTh: opts.nameTh, nameEn: opts.nameEn, logoUrl: "/uploads/mcu-logo.png", settings: { palette: "purple" } },
   });
 
   const permIds: Record<string, string> = {};

@@ -1,4 +1,5 @@
 import { prisma } from "@/shared/lib/infra/prisma";
+import { getDefaultTenantId } from "@/shared/lib/infra/tenant";
 import { Prisma, type Program, type Department, type DegreeLevel } from "@/generated/prisma";
 import type {
   CreateProgramInput,
@@ -107,10 +108,7 @@ function mapProgramToDto(p: ProgramWithDepartment): ProgramDto {
   };
 }
 
-export async function getDefaultTenantId(): Promise<string> {
-  const tenant = await prisma.tenant.findFirst({ where: { isActive: true }, select: { id: true } });
-  return tenant?.id ?? "";
-}
+export { getDefaultTenantId };
 
 export async function listPrograms(
   tenantId?: string,

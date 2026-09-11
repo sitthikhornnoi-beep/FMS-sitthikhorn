@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import Image from "next/image";
 import { Loader2, User, Settings } from "lucide-react";
 import { AdminShell, useBreadcrumbTailItems, type Crumb } from "@/shared/components/liyon";
 import { AdminSidebarNav } from "@/components/layout/admin-sidebar-nav";
@@ -45,6 +46,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <AdminShell
       brandName={t("app.name")} brandTagline={t("app.tagline")} brandHref="/dashboard"
+      brandLogo={<Image src="/uploads/mcu-logo.png" alt="MCU Logo" width={32} height={32} className="h-full w-full object-contain" priority />}
       breadcrumb={breadcrumb} breadcrumbLabel={t("common.breadcrumb")}
       roleLabel={roles[0] ? localizedName(roles[0], locale) : null}
       languageSwitcher={<LanguageSwitcher className="lang" />}

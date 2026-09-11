@@ -1,4 +1,5 @@
 import { prisma } from "@/shared/lib/infra/prisma";
+import { getDefaultTenantId } from "@/shared/lib/infra/tenant";
 import { Prisma } from "@/generated/prisma";
 import type {
   CreateDepartmentInput,
@@ -67,10 +68,7 @@ export interface StaffProfileDto {
   updatedAt: string;
 }
 
-export async function getDefaultTenantId(): Promise<string> {
-  const tenant = await prisma.tenant.findFirst({ where: { isActive: true }, select: { id: true } });
-  return tenant?.id ?? "";
-}
+export { getDefaultTenantId };
 
 export async function listDepartments(tenantId?: string, activeOnly = false): Promise<DepartmentDto[]> {
   const tId = tenantId || (await getDefaultTenantId());

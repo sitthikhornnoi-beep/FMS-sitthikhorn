@@ -14,8 +14,12 @@ import {
   CheckCircle2,
   Calendar,
   Users,
+  FileText,
+  ExternalLink,
+  Mail,
 } from "lucide-react";
 import { getProgramBySlug } from "@/features/curriculum/server";
+import { listStaffProfiles } from "@/features/personnel/server";
 import { getLocale } from "@/shared/lib/i18n/server";
 
 interface ProgramDetailPageProps {
@@ -30,6 +34,10 @@ export default async function ProgramDetailPage({ params }: ProgramDetailPagePro
   if (!program) {
     notFound();
   }
+
+  const committeeMembers = program.departmentId
+    ? await listStaffProfiles(undefined, { departmentId: program.departmentId, activeOnly: true })
+    : [];
 
   const getDegreeLevelName = () => {
     switch (program.degreeLevel) {
@@ -409,7 +417,153 @@ export default async function ProgramDetailPage({ params }: ProgramDetailPagePro
         </section>
       )}
 
-      {/* SECTION 6: Department & Faculty Contact */}
+      {/* SECTION 6: Program Committee Members (คณะกรรมการประจำหลักสูตร) */}
+      {committeeMembers.length > 0 && (
+        <section className="space-y-4">
+          <div className="flex items-center justify-between border-b border-border pb-3">
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-primary" />
+              <div>
+                <h2 className="text-lg sm:text-xl font-bold text-foreground">
+                  {locale === "th" ? "คณะกรรมการประจำหลักสูตรและอาจารย์ผู้รับผิดชอบ" : "Program Committee & Faculty Members"}
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  {locale === "th"
+                    ? "คณาจารย์ผู้ทรงคุณวุฒิผู้รับผิดชอบและบริหารหลักสูตร"
+                    : "Academic committee and qualified lecturers overseeing the curriculum"}
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/personnel"
+              className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
+            >
+              <span>{locale === "th" ? "ดูทำเนียบคณาจารย์ทั้งหมด" : "View All"}</span>
+              <ArrowLeft className="w-3 h-3 rotate-180" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {committeeMembers.map((member) => (
+              <div
+                key={member.id}
+                className="p-5 rounded-2xl bg-card border border-border shadow-xs hover:shadow-md hover:border-primary/40 transition-all flex flex-col justify-between space-y-4"
+              >
+                <div className="flex items-start gap-3.5">
+                  <div className="relative w-14 h-14 rounded-full overflow-hidden bg-muted shrink-0 border-2 border-primary/20 shadow-xs">
+                    {member.avatarUrl ? (
+                      <Image
+                        src={member.avatarUrl}
+                        alt={`${member.academicTitleTh || ""}${member.firstNameTh} ${member.lastNameTh}`}
+                        fill
+                        className="object-cover object-top"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-bold text-base">
+                        {member.firstNameTh.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-1 min-w-0 flex-1">
+                    <h3 className="text-sm font-bold text-foreground line-clamp-1">
+                      {member.academicTitleTh ? `${member.academicTitleTh} ` : ""}
+                      {member.firstNameTh} {member.lastNameTh}
+                    </h3>
+                    <p className="text-xs text-primary font-medium line-clamp-1">
+                      {locale === "th" ? member.positionTh : (member.positionEn || member.positionTh)}
+                    </p>
+                    {member.email && (
+                      <a
+                        href={`mailto:${member.email}`}
+                        className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition-colors truncate max-w-full"
+                      >
+                        <Mail className="w-3 h-3 shrink-0" />
+                        <span className="truncate">{member.email}</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                {member.education && member.education.length > 0 && (
+                  <div className="pt-2.5 border-t border-border/50 text-[11px] text-muted-foreground line-clamp-2">
+                    {member.education[0]}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* SECTION 7: Official Documents & Social Media */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Official Document Card */}
+        <div className="p-6 rounded-2xl bg-card border border-border shadow-xs space-y-4 flex flex-col justify-between">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-red-500" />
+              <h3 className="text-sm font-bold text-foreground">
+                {locale === "th" ? "เอกสารคำสั่งประจำหลักสูตร" : "Official Curriculum Documents"}
+              </h3>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {locale === "th"
+                ? "คำสั่งแต่งตั้งอาจารย์ผู้รับผิดชอบและอาจารย์ประจำหลักสูตรรัฐศาสตรบัณฑิต สาขาวิชารัฐศาสตร์ (ฉบับปี พ.ศ. ๒๕๖๗)"
+                : "Official Appointment Order of the Program Committee & Lecturers (B.E. 2567)"}
+            </p>
+          </div>
+
+          <div className="pt-3 border-t border-border flex flex-wrap items-center gap-2.5">
+            <a
+              href="https://sothorn.mcu.ac.th/new/uploads/documents/20260815_180023_714c58.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-xs"
+            >
+              <FileDown className="w-3.5 h-3.5" />
+              <span>{locale === "th" ? "ดาวน์โหลดคำสั่งแต่งตั้ง (PDF)" : "Download Appointment Order (PDF)"}</span>
+            </a>
+          </div>
+        </div>
+
+        {/* Facebook Page Card */}
+        <div className="p-6 rounded-2xl bg-card border border-border shadow-xs space-y-4 flex flex-col justify-between">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold">
+                f
+              </div>
+              <h3 className="text-sm font-bold text-foreground">
+                {locale === "th" ? "สื่อสังคมออนไลน์ของสาขาวิชา" : "Official Social Media"}
+              </h3>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {locale === "th"
+                ? "ติดตามข่าวสาร กิจกรรมนิสิต และภาพบรรยากาศการเรียนการสอนผ่านทาง Facebook เพจทางการ"
+                : "Follow latest updates, student activities, and classroom moments on our official Facebook Page."}
+            </p>
+          </div>
+
+          <div className="pt-3 border-t border-border flex items-center justify-between">
+            <span className="text-xs text-muted-foreground truncate font-mono">
+              @PoliticalScienceSothornMCU
+            </span>
+            <a
+              href="https://www.facebook.com/PoliticalScienceSothornMCU"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-xs"
+            >
+              <span>{locale === "th" ? "เข้าสู่เพจ Facebook" : "Visit Facebook Page"}</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 8: Department & Faculty Contact */}
       <section className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-muted/60 via-muted/30 to-background border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div className="space-y-2 max-w-lg">
           <h3 className="text-base sm:text-lg font-bold text-foreground">

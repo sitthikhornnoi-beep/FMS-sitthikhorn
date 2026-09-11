@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Search, Calendar, Eye, FileText, Pin } from "lucide-react";
 import { listPublishedArticles, listNewsCategories } from "@/features/news/server";
 import { getLocale } from "@/shared/lib/i18n/server";
@@ -103,10 +104,13 @@ export default async function PublicNewsPage({ searchParams }: NewsPageProps) {
             >
               <div className="relative h-52 w-full bg-muted overflow-hidden">
                 {article.coverImageUrl ? (
-                  <img
+                  <Image
                     src={article.coverImageUrl}
                     alt={locale === "th" ? article.titleTh : (article.titleEn ?? article.titleTh)}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    unoptimized={!article.coverImageUrl.includes("unsplash.com")}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-muted/40 text-muted-foreground">

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Calendar, Eye, User, Pin, Tag } from "lucide-react";
 import { getArticleBySlug } from "@/features/news/server";
@@ -80,11 +81,15 @@ export default async function ArticleDetailPage({ params }: ArticleDetailPagePro
 
       {/* Cover Image Banner */}
       {article.coverImageUrl && (
-        <div className="rounded-2xl overflow-hidden border border-border/60 shadow-sm max-h-[480px] w-full bg-muted">
-          <img
+        <div className="relative rounded-2xl overflow-hidden border border-border/60 shadow-sm h-[320px] sm:h-[480px] w-full bg-muted">
+          <Image
             src={article.coverImageUrl}
             alt={title}
-            className="w-full h-full object-cover"
+            fill
+            priority
+            sizes="(max-width: 1200px) 100vw, 1200px"
+            className="object-cover"
+            unoptimized={!article.coverImageUrl.includes("unsplash.com")}
           />
         </div>
       )}

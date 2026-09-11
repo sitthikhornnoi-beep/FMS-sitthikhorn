@@ -1,4 +1,5 @@
 import { prisma } from "@/shared/lib/infra/prisma";
+import { getDefaultTenantId } from "@/shared/lib/infra/tenant";
 import type { Prisma } from "@/generated/prisma";
 import type {
   DocType,
@@ -104,10 +105,7 @@ function mapToDto(doc: RawDocPayload): DocumentDto {
   };
 }
 
-export async function getDefaultTenantId(): Promise<string> {
-  const tenant = await prisma.tenant.findFirst({ where: { isActive: true }, select: { id: true } });
-  return tenant?.id ?? "";
-}
+export { getDefaultTenantId };
 
 export async function trackDocumentByNumber(
   docNumber: string

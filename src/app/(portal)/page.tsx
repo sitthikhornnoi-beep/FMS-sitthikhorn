@@ -1,8 +1,10 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, Calendar, Eye, Sparkles, BookOpen, Users, FileText, Building2, Pin } from "lucide-react";
 import { listPublishedArticles } from "@/features/news/server";
 import { getLocale } from "@/shared/lib/i18n/server";
 import { formatDate } from "@/shared/lib/format";
+import { ConveyorHero } from "./_components/conveyor-hero";
 
 export default async function PortalHomePage() {
   const locale = await getLocale();
@@ -11,28 +13,28 @@ export default async function PortalHomePage() {
   const recent = articles.slice(0, 6);
 
   return (
-    <div className="space-y-16 pb-12">
-      {/* 🌟 HERO SECTION / FEATURED NEWS */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-primary/10 via-background to-background pt-12 pb-8 border-b border-border/40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-10 space-y-3">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-primary/15 text-primary border border-primary/20">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>{locale === "th" ? "ยินดีต้อนรับสู่เว็บไซต์หลักสูตร" : "Welcome to Program Portal"}</span>
+    <div className="space-y-14 pb-12">
+      {/* 🌟 3D CONVEYOR HERO (Inspired by Etail 3D - Monks & Lay Students) */}
+      <ConveyorHero locale={locale} />
+
+      {/* Featured Highlights Grid (Pinned News) */}
+      {featured.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-2 mb-6">
+            <span className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+              <Pin className="w-4 h-4" />
+            </span>
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+                {locale === "th" ? "ข่าวประชาสัมพันธ์เด่น" : "Featured Announcements"}
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {locale === "th" ? "กิจกรรมและประกาศสำคัญประจำหลักสูตร" : "Important program updates and announcements"}
+              </p>
             </div>
-            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-foreground leading-tight">
-              {locale === "th" ? "หลักสูตรรัฐศาสตรบัณฑิต" : "Bachelor of Political Science Program"}
-            </h1>
-            <p className="text-base sm:text-lg text-muted-foreground">
-              {locale === "th"
-                ? "ศูนย์รวมแห่งความเป็นเลิศทางวิชาการ การปกครอง นโยบายสาธารณะ และการพัฒนาผู้นำแห่งอนาคต"
-                : "Center of Academic Excellence, Governance, Public Policy, and Future Leadership"}
-            </p>
           </div>
 
-          {/* Featured Highlights Grid */}
-          {featured.length > 0 && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {featured.map((item) => (
                 <Link
                   key={item.id}
@@ -41,10 +43,13 @@ export default async function PortalHomePage() {
                 >
                   <div className="relative h-64 sm:h-72 w-full overflow-hidden bg-muted">
                     {item.coverImageUrl ? (
-                      <img
+                      <Image
                         src={item.coverImageUrl}
                         alt={locale === "th" ? item.titleTh : (item.titleEn ?? item.titleTh)}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        fill
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        unoptimized={!item.coverImageUrl.includes("unsplash.com")}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5 text-primary">
@@ -86,9 +91,8 @@ export default async function PortalHomePage() {
                 </Link>
               ))}
             </div>
-          )}
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* 📰 LATEST NEWS SECTION */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -124,10 +128,13 @@ export default async function PortalHomePage() {
               >
                 <div className="relative h-48 w-full bg-muted overflow-hidden">
                   {article.coverImageUrl ? (
-                    <img
+                    <Image
                       src={article.coverImageUrl}
                       alt={locale === "th" ? article.titleTh : (article.titleEn ?? article.titleTh)}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      unoptimized={!article.coverImageUrl.includes("unsplash.com")}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-muted/40 text-muted-foreground">
