@@ -88,15 +88,18 @@ export async function updateTenantSettings(input: { tenantId: string; actorId: s
     let newSmtp = undefined;
     if (input.smtp) {
       const existingPass = prevSettings.smtp?.pass ?? "";
-      const pass = input.smtp.pass ? input.smtp.pass : existingPass;
+      const isGmail = (input.smtp.host || "").toLowerCase().includes("gmail");
+      const pass = input.smtp.pass
+        ? (isGmail ? input.smtp.pass.replace(/\s+/g, "") : input.smtp.pass.trim())
+        : existingPass;
       newSmtp = {
         enabled: input.smtp.enabled,
-        host: input.smtp.host,
+        host: input.smtp.host.trim(),
         port: input.smtp.port,
         secure: input.smtp.secure,
-        user: input.smtp.user,
+        user: input.smtp.user.trim(),
         pass,
-        from: input.smtp.from,
+        from: input.smtp.from.trim(),
       };
     }
 

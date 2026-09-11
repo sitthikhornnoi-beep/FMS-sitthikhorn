@@ -74,11 +74,15 @@ export async function sendMail(input: MailInput, tenantId?: string): Promise<{ d
   }
 
   try {
+    const isGmail = cfg.host.toLowerCase().includes("gmail");
+    const user = cfg.user ? cfg.user.trim() : undefined;
+    const pass = cfg.pass ? (isGmail ? cfg.pass.replace(/\s+/g, "") : cfg.pass.trim()) : undefined;
+
     const transport = nodemailer.createTransport({
       host: cfg.host,
       port: cfg.port,
       secure: cfg.secure,
-      auth: cfg.user ? { user: cfg.user, pass: cfg.pass } : undefined,
+      auth: user ? { user, pass } : undefined,
     });
     await transport.sendMail({
       from: cfg.from,
@@ -100,11 +104,15 @@ export async function verifySmtp(
   testToEmail?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const isGmail = cfg.host.toLowerCase().includes("gmail");
+    const user = cfg.user.trim();
+    const pass = isGmail ? cfg.pass.replace(/\s+/g, "") : cfg.pass.trim();
+
     const transport = nodemailer.createTransport({
       host: cfg.host,
       port: cfg.port,
       secure: cfg.secure,
-      auth: { user: cfg.user, pass: cfg.pass },
+      auth: { user, pass },
       tls: { rejectUnauthorized: false },
     });
     await transport.verify();
