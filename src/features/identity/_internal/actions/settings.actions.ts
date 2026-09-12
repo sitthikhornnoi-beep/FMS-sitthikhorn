@@ -5,10 +5,11 @@ import { getLocale } from "@/shared/lib/i18n/server";
 import { zodErrorMap } from "@/shared/lib/i18n/zod-locale";
 import { errors } from "@/shared/lib/errors";
 import { verifySmtp } from "@/shared/lib/infra/mailer";
+import { verifyGemini } from "@/shared/lib/infra/gemini";
 import { P } from "../../permissions";
 import { requirePermission } from "../rbac";
-import { updateSettingsSchema, testSmtpSchema } from "../validations/settings";
-import { getTenantSettings, updateTenantSettings, getTenantRawSmtp, type TenantSettings } from "../services/tenant.service";
+import { updateSettingsSchema, testSmtpSchema, testGeminiSchema } from "../validations/settings";
+import { getTenantSettings, updateTenantSettings, getTenantRawSmtp, getTenantRawGemini, type TenantSettings } from "../services/tenant.service";
 
 export async function getSettingsAction(): Promise<ActionResult<TenantSettings>> {
   return runAction(async () => getTenantSettings((await requirePermission(P.settingsManage)).tenantId));
@@ -60,6 +61,25 @@ export async function testSmtpAction(input: unknown): Promise<ActionResult<{ suc
       },
       data.to
     );
+  });
+}
+
+export async function testGeminiAction(input: unknown): Promise<ActionResult<{ success: boolean; error?: string }>> {
+  return runAction(async () => {
+    const ctx = await requirePermission(P.settingsManage);
+    const data = testGeminiSchema.parse(input, { error: zodErrorMap(await getLocale()) });
+
+    let apiKey = data.apiKey;
+    if (!apiKey) {
+      const raw = await getTenantRawGemini(ctx.tenantId);
+      if (raw?.apiKey) {
+        apiKey = raw.apiKey;
+      } else {
+        throw errors.validation("validation", { apiKey: ["กรุณาระบุ Gemini API Key"] });
+      }
+    }
+
+    return await verifyGemini(apiKey, data.model);
   });
 }
 

@@ -3,6 +3,7 @@ import {
   createNewsCategorySchema,
   createNewsArticleSchema,
   updateNewsArticleSchema,
+  translateNewsSchema,
 } from "./validations";
 
 describe("news validations", () => {
@@ -62,4 +63,25 @@ describe("news validations", () => {
     const parsed = updateNewsArticleSchema.parse(valid);
     expect(parsed.id).toBe(valid.id);
   });
+
+  it("translateNewsSchema ผ่านเมื่อมี titleTh และยอมรับ optional summary/content", () => {
+    const valid = {
+      titleTh: "หัวข้อข่าวภาษาไทยสำหรับแปล",
+      summaryTh: "สรุปย่อ",
+      contentTh: "เนื้อหาข่าว",
+    };
+    const parsed = translateNewsSchema.parse(valid);
+    expect(parsed.titleTh).toBe(valid.titleTh);
+    expect(parsed.summaryTh).toBe(valid.summaryTh);
+    expect(parsed.contentTh).toBe(valid.contentTh);
+  });
+
+  it("translateNewsSchema ล้มเหลวเมื่อ titleTh ว่างเปล่า", () => {
+    expect(() =>
+      translateNewsSchema.parse({
+        titleTh: "   ",
+      })
+    ).toThrow();
+  });
 });
+

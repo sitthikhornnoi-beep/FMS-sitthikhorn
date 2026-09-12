@@ -11,9 +11,14 @@ import {
   LiyonField,
   LiyonSelect,
 } from "@/shared/components/liyon";
+import { Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { NewsArticleDto, NewsCategoryDto } from "@/features/news";
-import { createNewsArticleAction, updateNewsArticleAction } from "@/features/news/actions";
+import {
+  createNewsArticleAction,
+  updateNewsArticleAction,
+  translateNewsWithGeminiAction,
+} from "@/features/news/actions";
 
 interface Props {
   open: boolean;
@@ -54,6 +59,40 @@ function NewsFormDialogInner({ open, onOpenChange, article, categories, onSaved 
     article?.status === "PUBLISHED" ? "PUBLISHED" : article?.status === "ARCHIVED" ? "ARCHIVED" : "DRAFT"
   );
   const [isPinned, setIsPinned] = useState(article?.isPinned ?? false);
+  const [isTranslating, setIsTranslating] = useState(false);
+
+  const handleAiTranslate = async () => {
+    if (!titleTh.trim()) {
+      toast.error(t("news.aiTranslateEmptyThai"));
+      return;
+    }
+
+    setIsTranslating(true);
+    try {
+      const res = await translateNewsWithGeminiAction({
+        titleTh: titleTh.trim(),
+        summaryTh: summaryTh.trim() || undefined,
+        contentTh: contentTh.trim() || undefined,
+      });
+
+      if (res.ok && res.data) {
+        if (res.data.titleEn) setTitleEn(res.data.titleEn);
+        if (res.data.summaryEn) setSummaryEn(res.data.summaryEn);
+        if (res.data.contentEn) setContentEn(res.data.contentEn);
+        if (res.data.suggestedSlug && (!slug || slug === "news" || !article)) {
+          setSlug(res.data.suggestedSlug.toLowerCase().replace(/[^a-z0-9-]/g, "-"));
+        }
+        toast.success(t("news.aiTranslateSuccess"));
+      } else {
+        const errMsg = (!res.ok ? res.error.message : "") || "AI translation error";
+        toast.error(t("news.aiTranslateError", { error: errMsg }));
+      }
+    } catch (e) {
+      toast.error(t("news.aiTranslateError", { error: e instanceof Error ? e.message : String(e) }));
+    } finally {
+      setIsTranslating(false);
+    }
+  };
 
   const handleTitleChange = (val: string) => {
     setTitleTh(val);
@@ -119,6 +158,39 @@ function NewsFormDialogInner({ open, onOpenChange, article, categories, onSaved 
         />
 
         <LiyonDialogBody className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+          {/* Gemini AI Translation Assistant Card */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-xl">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-primary/15 text-primary flex items-center justify-center shrink-0">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-xs font-semibold text-foreground">ตัวช่วยแปลข่าว 2 ภาษาด้วย Gemini AI</span>
+                <p className="text-[11px] text-muted-foreground">กรอกข้อมูลภาษาไทยแล้วกดปุ่มนี้เพื่อแปลและสร้างเนื้อหาภาษาอังกฤษอัตโนมัติ</p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              disabled={isPending || isTranslating}
+              onClick={handleAiTranslate}
+              className="inline-flex items-center gap-2 shrink-0 cursor-pointer shadow-sm text-xs"
+            >
+              {isTranslating ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>{t("news.aiTranslating")}</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>{t("news.btn.aiTranslate")}</span>
+                </>
+              )}
+            </Button>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <LiyonField label={t("news.field.titleTh")}>
               <input

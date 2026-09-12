@@ -30,6 +30,13 @@ export interface OrgConfig {
   mapUrl?: string;
 }
 
+export interface GeminiConfig {
+  enabled: boolean;
+  apiKey: string;
+  hasKey: boolean;
+  model: string;
+}
+
 export interface TenantSettings {
   code: string;
   nameTh: string;
@@ -38,6 +45,7 @@ export interface TenantSettings {
   palette: PaletteId;
   smtp?: SmtpConfig;
   org?: OrgConfig;
+  gemini?: GeminiConfig;
 }
 
 async function readTenantSettings(tenantId: string, db: Db): Promise<TenantSettings> {
@@ -47,16 +55,29 @@ async function readTenantSettings(tenantId: string, db: Db): Promise<TenantSetti
     palette?: unknown;
     smtp?: { enabled?: boolean; host?: string; port?: number; secure?: boolean; user?: string; pass?: string; from?: string };
     org?: Partial<OrgConfig>;
+    gemini?: { enabled?: boolean; apiKey?: string; model?: string };
   }) ?? {};
   const p = rawSettings.palette;
   const s = rawSettings.smtp;
   const o = rawSettings.org;
+  const g = rawSettings.gemini;
   return {
     code: t.code,
     nameTh: t.nameTh,
     nameEn: t.nameEn,
     logoUrl: t.logoUrl,
     palette: isPalette(p) ? p : DEFAULT_PALETTE,
+    gemini: g ? {
+      enabled: g.enabled ?? true,
+      apiKey: "",
+      hasKey: !!g.apiKey,
+      model: g.model || "gemini-2.0-flash",
+    } : {
+      enabled: true,
+      apiKey: "",
+      hasKey: !!process.env.GEMINI_API_KEY,
+      model: "gemini-2.0-flash",
+    },
     smtp: s ? {
       enabled: s.enabled ?? false,
       host: s.host ?? "smtp.gmail.com",
@@ -111,13 +132,26 @@ export async function getTenantRawSmtp(tenantId: string): Promise<{ enabled: boo
   };
 }
 
-/** เก็บคีย์อื่น ๆ ใน settings JSON ไว้ทั้งหมด — merge เฉพาะ palette และ smtp ที่เปลี่ยน ไม่ทับทั้งก้อน */
+/** ดึงการตั้งค่า Gemini AI จริง (รวม API Key) */
+export async function getTenantRawGemini(tenantId: string): Promise<{ enabled: boolean; apiKey: string; model: string } | null> {
+  const t = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { settings: true } });
+  const g = (t?.settings as { gemini?: { enabled?: boolean; apiKey?: string; model?: string } } | null)?.gemini;
+  const apiKey = g?.apiKey || process.env.GEMINI_API_KEY || "";
+  if (!apiKey) return null;
+  return {
+    enabled: g?.enabled ?? true,
+    apiKey,
+    model: g?.model || "gemini-2.0-flash",
+  };
+}
+
+/** เก็บคีย์อื่น ๆ ใน settings JSON ไว้ทั้งหมด — merge เฉพาะ palette, smtp และ gemini ที่เปลี่ยน ไม่ทับทั้งก้อน */
 export async function updateTenantSettings(input: { tenantId: string; actorId: string } & UpdateSettingsInput): Promise<void> {
   await prisma.$transaction(async (tx) => {
     // อ่านผ่าน tx เดียวกัน ไม่ใช่ client กลาง
     const before = await readTenantSettings(input.tenantId, tx);
     const t = await tx.tenant.findUniqueOrThrow({ where: { id: input.tenantId }, select: { settings: true } });
-    const prevSettings = (t.settings as { smtp?: { pass?: string } }) ?? {};
+    const prevSettings = (t.settings as { smtp?: { pass?: string }; gemini?: { apiKey?: string } }) ?? {};
 
     // หากรหัสผ่านไม่ได้ส่งมาใหม่ ให้คงรหัสผ่านเดิมไว้
     let newSmtp = undefined;
@@ -138,11 +172,26 @@ export async function updateTenantSettings(input: { tenantId: string; actorId: s
       };
     }
 
+    // หาก Gemini API Key ไม่ได้ส่งมาใหม่ ให้คง Key เดิมไว้
+    let newGemini = undefined;
+    if (input.gemini) {
+      const existingKey = prevSettings.gemini?.apiKey ?? "";
+      const apiKey = input.gemini.apiKey
+        ? input.gemini.apiKey.trim()
+        : existingKey;
+      newGemini = {
+        enabled: input.gemini.enabled,
+        apiKey,
+        model: input.gemini.model?.trim() || "gemini-2.0-flash",
+      };
+    }
+
     const updatedSettings = {
       ...(t.settings as object),
       palette: input.palette,
       ...(newSmtp ? { smtp: newSmtp } : {}),
       ...(input.org !== undefined ? { org: input.org } : {}),
+      ...(newGemini ? { gemini: newGemini } : {}),
     };
 
     await tx.tenant.update({

@@ -5,4 +5,5 @@ export {
   togglePinArticleAction,
   createNewsCategoryAction,
   getNewsCategoriesAction,
+  translateNewsWithGeminiAction,
 } from "./_internal/actions";

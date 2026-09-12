@@ -28,6 +28,13 @@ export const updateNewsArticleSchema = createNewsArticleSchema.extend({
   id: z.string().uuid(),
 });
 
+export const translateNewsSchema = z.object({
+  titleTh: z.string().trim().min(1, "กรุณากรอกหัวข้อข่าวภาษาไทยก่อนแปล"),
+  summaryTh: z.string().trim().optional().nullable(),
+  contentTh: z.string().trim().optional().nullable(),
+});
+
 export type CreateNewsCategoryInput = z.infer<typeof createNewsCategorySchema>;
 export type CreateNewsArticleInput = z.infer<typeof createNewsArticleSchema>;
 export type UpdateNewsArticleInput = z.infer<typeof updateNewsArticleSchema>;
+export type TranslateNewsInput = z.infer<typeof translateNewsSchema>;
