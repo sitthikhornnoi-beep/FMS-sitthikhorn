@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { signIn, getCsrfToken } from "next-auth/react";
 import { toast } from "sonner";
 import { useT } from "@/shared/lib/i18n/client";
@@ -8,7 +8,6 @@ import { safeCallbackUrl } from "@/shared/lib/security/callback-url";
 import { MailIcon, LockIcon, EyeOnIcon, EyeOffIcon, LogInIcon } from "../../_components/icons";
 
 export function PasswordLoginForm() {
-  const router = useRouter();
   const callbackUrl = useSearchParams().get("callbackUrl");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

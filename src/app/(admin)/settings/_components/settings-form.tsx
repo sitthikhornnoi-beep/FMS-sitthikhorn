@@ -1,9 +1,8 @@
 "use client";
-import { useState, useRef, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
-  Upload,
   X,
   Loader2,
   ImageIcon,
@@ -14,6 +13,9 @@ import {
   Eye,
   EyeOff,
   HelpCircle,
+  Crop,
+  Building2,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LiyonCard, LiyonField, LiyonSwitchRow, PalettePicker } from "@/shared/components/liyon";
@@ -21,6 +23,8 @@ import { useT } from "@/shared/lib/i18n/client";
 import type { PaletteId } from "@/shared/lib/palette";
 import type { TenantSettings } from "@/features/identity";
 import { updateSettingsAction, testSmtpAction } from "@/features/identity/actions";
+import { LogoCropModal } from "./logo-crop-modal";
+import { OrgTextModal } from "./org-text-modal";
 
 export function SettingsForm({ initial }: { initial: TenantSettings }) {
   const t = useT();
@@ -30,6 +34,16 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
     nameEn: initial.nameEn,
     logoUrl: initial.logoUrl ?? "",
     palette: initial.palette as PaletteId,
+    org: {
+      sloganTh: initial.org?.sloganTh ?? "",
+      sloganEn: initial.org?.sloganEn ?? "",
+      descriptionTh: initial.org?.descriptionTh ?? "",
+      descriptionEn: initial.org?.descriptionEn ?? "",
+      website: initial.org?.website ?? "",
+      contactEmail: initial.org?.contactEmail ?? "",
+      contactPhone: initial.org?.contactPhone ?? "",
+      address: initial.org?.address ?? "",
+    },
     smtp: {
       enabled: initial.smtp?.enabled ?? false,
       host: initial.smtp?.host ?? "smtp.gmail.com",
@@ -42,51 +56,16 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
     },
   });
   const [errors, setErrors] = useState<Record<string, string[]>>({});
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
   const [pending, start] = useTransition();
+
+  // Modals state
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [orgModalOpen, setOrgModalOpen] = useState(false);
 
   // Test SMTP state
   const [testEmail, setTestEmail] = useState("");
   const [testingSmtp, setTestingSmtp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Reset input value so re-selecting the same file fires change event
-    e.target.value = "";
-
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error(t("settings.logoHint"));
-      return;
-    }
-
-    setUploading(true);
-    try {
-      const data = new FormData();
-      data.append("file", file);
-
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: data,
-      });
-
-      const result = await res.json();
-      if (result.ok && result.url) {
-        setForm((prev) => ({ ...prev, logoUrl: result.url }));
-        setErrors((prev) => ({ ...prev, logoUrl: [] }));
-        toast.success(t("settings.uploadLogo"));
-      } else {
-        toast.error(result.error || t("settings.uploadError"));
-      }
-    } catch {
-      toast.error(t("settings.uploadError"));
-    } finally {
-      setUploading(false);
-    }
-  }
 
   function applyGmailPreset() {
     setForm((prev) => ({
@@ -169,69 +148,63 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
     <>
       <header className="ph"><h1>{t("settings.title")}</h1></header>
       <div className="set-cards">
+        {/* Card 1: โลโก้องค์กร (Organization Logo) */}
         <LiyonCard>
-          <h2>{t("settings.orgTitle")}</h2>
-          <div className="fields">
-            <LiyonField label={t("settings.nameTh")} htmlFor="s-name-th" error={errors.nameTh?.[0]}><input id="s-name-th" value={form.nameTh} onChange={(e) => setForm({ ...form, nameTh: e.target.value })} /></LiyonField>
-            <LiyonField label={t("settings.nameEn")} htmlFor="s-name-en" error={errors.nameEn?.[0]}><input id="s-name-en" value={form.nameEn} onChange={(e) => setForm({ ...form, nameEn: e.target.value })} /></LiyonField>
-            <LiyonField label={t("settings.logoUrl")} htmlFor="s-logo" hint={t("settings.logoHint")} error={errors.logoUrl?.[0]}>
-              <div className="space-y-3">
-                <div className="flex flex-wrap items-center gap-4">
-                  {form.logoUrl ? (
-                    <div className="relative group rounded-lg border border-border bg-muted/30 p-2 flex items-center justify-center min-w-[100px] h-[80px] overflow-hidden">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={form.logoUrl}
-                        alt="Logo Preview"
-                        className="max-h-full max-w-full object-contain"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setForm((prev) => ({ ...prev, logoUrl: "" }))}
-                        className="absolute top-1 right-1 p-1 rounded-full bg-background/80 hover:bg-destructive hover:text-destructive-foreground text-muted-foreground shadow-sm transition-colors cursor-pointer"
-                        title={t("settings.removeLogo")}
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="rounded-lg border border-dashed border-border/80 bg-muted/20 w-[100px] h-[80px] flex flex-col items-center justify-center text-muted-foreground gap-1">
-                      <ImageIcon className="w-6 h-6 opacity-40" />
-                      <span className="text-[10px]">No Logo</span>
-                    </div>
-                  )}
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+            <div>
+              <h2 className="!mb-0">{t("settings.logoTitle")}</h2>
+              <p className="text-sm text-muted-foreground mt-1">{t("settings.logoDesc")}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-muted text-muted-foreground border border-border">
+                PNG, JPG, JPEG &bull; สูงสุด 200 KB
+              </span>
+            </div>
+          </div>
 
-                  <div className="flex flex-col gap-2">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif"
-                      className="hidden"
-                      onChange={handleFileChange}
+          <div className="fields mt-4">
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-4">
+                {form.logoUrl ? (
+                  <div className="relative group rounded-xl border border-border bg-muted/20 p-2 flex items-center justify-center min-w-[120px] h-[90px] overflow-hidden shadow-xs">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={form.logoUrl}
+                      alt="Logo Preview"
+                      className="max-h-full max-w-full object-contain"
                     />
-                    <Button
+                    <button
                       type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={uploading}
-                      onClick={() => fileInputRef.current?.click()}
-                      className="inline-flex items-center gap-2 cursor-pointer"
+                      onClick={() => setForm((prev) => ({ ...prev, logoUrl: "" }))}
+                      className="absolute top-1.5 right-1.5 p-1 rounded-full bg-background/90 hover:bg-destructive hover:text-destructive-foreground text-muted-foreground shadow-sm transition-colors cursor-pointer"
+                      title={t("settings.removeLogo")}
                     >
-                      {uploading ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          <span>{t("settings.uploading")}</span>
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="w-4 h-4" />
-                          <span>{t("settings.uploadLogo")}</span>
-                        </>
-                      )}
-                    </Button>
+                      <X className="w-3.5 h-3.5" />
+                    </button>
                   </div>
-                </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-border/80 bg-muted/20 w-[120px] h-[90px] flex flex-col items-center justify-center text-muted-foreground gap-1.5">
+                    <ImageIcon className="w-7 h-7 opacity-40" />
+                    <span className="text-[10px] font-medium">ยังไม่มีโลโก้</span>
+                  </div>
+                )}
 
+                <div className="flex flex-col gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => setCropModalOpen(true)}
+                    className="inline-flex items-center gap-2 cursor-pointer"
+                  >
+                    <Crop className="w-4 h-4" />
+                    <span>{t("settings.editLogoBtn")}</span>
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    รองรับการลากวางไฟล์ หรือนำเข้าจาก URL พร้อมเครื่องมือครอบภาพ ย่อขยาย ปรับความเอียง จัดกึ่งกลาง และบีบอัดไม่เกิน 200 KB
+                  </p>
+                </div>
+              </div>
+
+              <LiyonField label={t("settings.logoUrl")} htmlFor="s-logo" hint={t("settings.logoHint")} error={errors.logoUrl?.[0]}>
                 <input
                   id="s-logo"
                   type="text"
@@ -239,12 +212,135 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
                   value={form.logoUrl}
                   onChange={(e) => setForm({ ...form, logoUrl: e.target.value })}
                 />
-              </div>
-            </LiyonField>
+              </LiyonField>
+            </div>
           </div>
         </LiyonCard>
 
-        {/* SMTP Configuration Card */}
+        {/* Card 2: ข้อมูลและข้อความองค์กรแบบมาตรฐานโลก (World-Standard Organization Text Editor) */}
+        {/* ตำแหน่ง: อยู่ด้านล่างของ ปุ่ม อัพโหลดภาพ และอยู่ก่อนหน้า ระบบ ปรับโทนสี */}
+        <LiyonCard>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+            <div>
+              <div className="flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-primary" />
+                <h2 className="!mb-0">{t("settings.orgSectionTitle")}</h2>
+                <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                  {t("settings.standardBadge")}
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">{t("settings.orgSectionDesc")}</p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setOrgModalOpen(true)}
+              className="inline-flex items-center gap-1.5 text-xs h-8 cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
+              <span>{t("settings.editOrgTextBtn")}</span>
+            </Button>
+          </div>
+
+          <div className="fields">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <LiyonField label={t("settings.nameTh")} htmlFor="s-name-th" error={errors.nameTh?.[0]}>
+                <input
+                  id="s-name-th"
+                  value={form.nameTh}
+                  onChange={(e) => setForm({ ...form, nameTh: e.target.value })}
+                />
+              </LiyonField>
+              <LiyonField label={t("settings.nameEn")} htmlFor="s-name-en" error={errors.nameEn?.[0]}>
+                <input
+                  id="s-name-en"
+                  value={form.nameEn}
+                  onChange={(e) => setForm({ ...form, nameEn: e.target.value })}
+                />
+              </LiyonField>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <LiyonField label={t("settings.sloganTh")} htmlFor="s-slogan-th">
+                <input
+                  id="s-slogan-th"
+                  value={form.org.sloganTh}
+                  placeholder="สโลแกนหรือคำขวัญภาษาไทย"
+                  onChange={(e) =>
+                    setForm({ ...form, org: { ...form.org, sloganTh: e.target.value } })
+                  }
+                />
+              </LiyonField>
+              <LiyonField label={t("settings.sloganEn")} htmlFor="s-slogan-en">
+                <input
+                  id="s-slogan-en"
+                  value={form.org.sloganEn}
+                  placeholder="Official Tagline or Slogan in English"
+                  onChange={(e) =>
+                    setForm({ ...form, org: { ...form.org, sloganEn: e.target.value } })
+                  }
+                />
+              </LiyonField>
+            </div>
+
+            {/* World-Standard Live Corporate Brand Preview Card */}
+            <div className="rounded-xl border border-border bg-muted/20 p-4 mt-2">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <Eye className="w-3.5 h-3.5 text-primary" />
+                  {t("settings.previewBrandCard")}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setOrgModalOpen(true)}
+                  className="text-xs text-primary hover:underline cursor-pointer flex items-center gap-1"
+                >
+                  <FileText className="w-3 h-3" />
+                  <span>แก้ไขข้อความและข้อมูลติดต่อ &rarr;</span>
+                </button>
+              </div>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                {form.logoUrl ? (
+                  <div className="w-12 h-12 rounded-lg border border-border bg-background p-1.5 flex items-center justify-center shrink-0 overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={form.logoUrl} alt="Logo" className="max-h-full max-w-full object-contain" />
+                  </div>
+                ) : (
+                  <div className="w-12 h-12 rounded-lg border border-dashed border-border bg-muted/40 flex items-center justify-center text-muted-foreground shrink-0">
+                    <Building2 className="w-6 h-6 opacity-40" />
+                  </div>
+                )}
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-bold text-foreground text-sm leading-tight">
+                      {form.nameTh || "ชื่อองค์กร"}
+                    </h4>
+                    <span className="text-[9px] bg-primary/10 text-primary font-semibold px-1.5 py-0.2 rounded">
+                      Standard
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{form.nameEn || "Organization Name"}</p>
+                  {(form.org.sloganTh || form.org.sloganEn) && (
+                    <p className="text-xs text-primary italic mt-0.5">
+                      &ldquo;{form.org.sloganTh || form.org.sloganEn}&rdquo;
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </LiyonCard>
+
+        {/* Card 3: Brand Colour Palette (ระบบปรับโทนสี อยู่ถัดจากข้อความองค์กร) */}
+        <LiyonCard>
+          <h2>{t("settings.brandTitle")}</h2>
+          <p>{t("settings.brandDesc")}</p>
+          <PalettePicker value={form.palette} onChange={(p) => setForm({ ...form, palette: p })} label={t("settings.paletteLabel")} />
+          {form.palette === "coral" && <p className="warn" role="note">{t("settings.coralWarn")}</p>}
+        </LiyonCard>
+
+        {/* Card 4: SMTP Configuration Card */}
         <LiyonCard>
           <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
             <div className="flex items-center gap-2">
@@ -477,15 +573,57 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
             </div>
           </div>
         </LiyonCard>
-
-        <LiyonCard>
-          <h2>{t("settings.brandTitle")}</h2>
-          <p>{t("settings.brandDesc")}</p>
-          <PalettePicker value={form.palette} onChange={(p) => setForm({ ...form, palette: p })} label={t("settings.paletteLabel")} />
-          {form.palette === "coral" && <p className="warn" role="note">{t("settings.coralWarn")}</p>}
-        </LiyonCard>
         <div className="savebar"><Button type="button" onClick={save} disabled={pending}>{t("common.save")}</Button></div>
       </div>
+
+      {/* Logo Transformation & Crop Modal (<= 200 KB) */}
+      <LogoCropModal
+        key={cropModalOpen ? "crop-open" : "crop-closed"}
+        open={cropModalOpen}
+        onOpenChange={setCropModalOpen}
+        onSuccess={(logoUrl) => {
+          setForm((prev) => ({ ...prev, logoUrl }));
+          setErrors((prev) => ({ ...prev, logoUrl: [] }));
+        }}
+      />
+
+      {/* World-Standard Organization Text Modal */}
+      <OrgTextModal
+        key={orgModalOpen ? "org-open" : "org-closed"}
+        open={orgModalOpen}
+        onOpenChange={setOrgModalOpen}
+        initial={{
+          nameTh: form.nameTh,
+          nameEn: form.nameEn,
+          sloganTh: form.org.sloganTh,
+          sloganEn: form.org.sloganEn,
+          descriptionTh: form.org.descriptionTh,
+          descriptionEn: form.org.descriptionEn,
+          website: form.org.website,
+          contactEmail: form.org.contactEmail,
+          contactPhone: form.org.contactPhone,
+          address: form.org.address,
+        }}
+        logoUrl={form.logoUrl}
+        onApply={(updated) => {
+          setForm((prev) => ({
+            ...prev,
+            nameTh: updated.nameTh,
+            nameEn: updated.nameEn,
+            org: {
+              sloganTh: updated.sloganTh,
+              sloganEn: updated.sloganEn,
+              descriptionTh: updated.descriptionTh,
+              descriptionEn: updated.descriptionEn,
+              website: updated.website,
+              contactEmail: updated.contactEmail,
+              contactPhone: updated.contactPhone,
+              address: updated.address,
+            },
+          }));
+          toast.success("อัปเดตข้อความองค์กรเรียบร้อยแล้ว (กรุณากดบันทึกเพื่อมีผลถาวร)");
+        }}
+      />
     </>
   );
 }

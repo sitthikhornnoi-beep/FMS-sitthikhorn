@@ -15,6 +15,17 @@ export interface SmtpConfig {
   hasPass: boolean;
 }
 
+export interface OrgConfig {
+  sloganTh: string;
+  sloganEn: string;
+  descriptionTh: string;
+  descriptionEn: string;
+  website: string;
+  contactEmail: string;
+  contactPhone: string;
+  address: string;
+}
+
 export interface TenantSettings {
   code: string;
   nameTh: string;
@@ -22,14 +33,20 @@ export interface TenantSettings {
   logoUrl: string | null;
   palette: PaletteId;
   smtp?: SmtpConfig;
+  org?: OrgConfig;
 }
 
 async function readTenantSettings(tenantId: string, db: Db): Promise<TenantSettings> {
   const t = await db.tenant.findUnique({ where: { id: tenantId } });
   if (!t) throw errors.not_found();
-  const rawSettings = (t.settings as { palette?: unknown; smtp?: { enabled?: boolean; host?: string; port?: number; secure?: boolean; user?: string; pass?: string; from?: string } }) ?? {};
+  const rawSettings = (t.settings as {
+    palette?: unknown;
+    smtp?: { enabled?: boolean; host?: string; port?: number; secure?: boolean; user?: string; pass?: string; from?: string };
+    org?: Partial<OrgConfig>;
+  }) ?? {};
   const p = rawSettings.palette;
   const s = rawSettings.smtp;
+  const o = rawSettings.org;
   return {
     code: t.code,
     nameTh: t.nameTh,
@@ -52,6 +69,16 @@ async function readTenantSettings(tenantId: string, db: Db): Promise<TenantSetti
       user: "",
       from: "",
       hasPass: false,
+    },
+    org: {
+      sloganTh: o?.sloganTh ?? "",
+      sloganEn: o?.sloganEn ?? "",
+      descriptionTh: o?.descriptionTh ?? "",
+      descriptionEn: o?.descriptionEn ?? "",
+      website: o?.website ?? "",
+      contactEmail: o?.contactEmail ?? "",
+      contactPhone: o?.contactPhone ?? "",
+      address: o?.address ?? "",
     },
   };
 }
@@ -107,6 +134,7 @@ export async function updateTenantSettings(input: { tenantId: string; actorId: s
       ...(t.settings as object),
       palette: input.palette,
       ...(newSmtp ? { smtp: newSmtp } : {}),
+      ...(input.org !== undefined ? { org: input.org } : {}),
     };
 
     await tx.tenant.update({
