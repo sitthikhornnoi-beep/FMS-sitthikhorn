@@ -38,14 +38,16 @@ export function LiyonField({ label, htmlFor, hint, error, icon, children, classN
 }
 
 // ── .selw — <select> ของเบราว์เซอร์ วาดลูกศรเองผ่าน mask ─────────────────
-export type LiyonSelectProps = React.SelectHTMLAttributes<HTMLSelectElement>;
+export type LiyonSelectProps = React.SelectHTMLAttributes<HTMLSelectElement> & {
+  wrapperClassName?: string;
+};
 
 export const LiyonSelect = React.forwardRef<HTMLSelectElement, LiyonSelectProps>(function LiyonSelect(
-  { className, children, ...props },
+  { className, wrapperClassName, children, ...props },
   ref,
 ) {
   return (
-    <span className="selw">
+    <span className={cn("selw", wrapperClassName)}>
       <select ref={ref} className={className} {...props}>
         {children}
       </select>

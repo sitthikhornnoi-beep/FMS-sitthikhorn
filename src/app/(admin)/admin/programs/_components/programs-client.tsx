@@ -396,9 +396,9 @@ export function ProgramsAdminClient({
       ) : (
         <>
           {/* Filter and Search Bar */}
-          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-card p-4 rounded-xl border border-border">
+          <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between bg-card p-4 rounded-xl border border-border">
             {/* Degree Level Filter Pills */}
-            <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
+            <div className="flex flex-wrap items-center gap-1.5">
               {[
                 { id: "ALL", label: t("curriculum.filter.allLevels") },
                 { id: "BACHELOR", label: t("curriculum.level.bachelor") },
@@ -407,8 +407,9 @@ export function ProgramsAdminClient({
               ].map((tab) => (
                 <button
                   key={tab.id}
+                  type="button"
                   onClick={() => setFilterLevel(tab.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                     filterLevel === tab.id
                       ? "bg-primary text-primary-foreground shadow-xs"
                       : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -420,12 +421,14 @@ export function ProgramsAdminClient({
             </div>
 
             {/* Department Filter & Search */}
-            <div className="flex items-center gap-2.5 w-full sm:w-auto">
-              <div className="w-48">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0">
+              <div className="w-full sm:w-56 min-w-0">
                 <LiyonSelect
                   value={filterDept}
                   onChange={(e) => setFilterDept(e.target.value)}
-                  className="text-xs"
+                  wrapperClassName="w-full"
+                  className="w-full max-w-full text-xs truncate"
+                  aria-label={t("curriculum.field.department")}
                 >
                   <option value="">{t("curriculum.filter.allDepartments")}</option>
                   {departments.map((d) => (
@@ -436,15 +439,18 @@ export function ProgramsAdminClient({
                 </LiyonSelect>
               </div>
 
-              <div className="relative flex-1 sm:w-56">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="ค้นหาหลักสูตร, รหัส, ปริญญา..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs bg-background border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"
-                />
+              <div className="w-full sm:w-64 min-w-0">
+                <span className="tsearch w-full">
+                  <Search aria-hidden="true" className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <input
+                    type="search"
+                    placeholder="ค้นหาหลักสูตร, รหัส, ปริญญา..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    aria-label={t("common.search")}
+                    className="w-full text-xs"
+                  />
+                </span>
               </div>
             </div>
           </div>
