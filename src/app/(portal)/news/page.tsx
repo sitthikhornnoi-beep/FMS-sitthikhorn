@@ -1,9 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Search, Calendar, Eye, FileText, Pin } from "lucide-react";
+import { Search, Calendar, Eye, FileText, Pin, Plus } from "lucide-react";
 import { listPublishedArticles, listNewsCategories } from "@/features/news/server";
 import { getLocale } from "@/shared/lib/i18n/server";
 import { formatDate } from "@/shared/lib/format";
+import { getSessionContext } from "@/features/identity/server";
 
 interface NewsPageProps {
   searchParams: Promise<{ category?: string; search?: string }>;
@@ -12,6 +13,8 @@ interface NewsPageProps {
 export default async function PublicNewsPage({ searchParams }: NewsPageProps) {
   const { category, search } = await searchParams;
   const locale = await getLocale();
+  const session = await getSessionContext();
+  const canManageNews = session && (session.isSuperAdmin || session.permissions.includes("news:create") || session.permissions.includes("news:manage"));
 
   const [categories, articles] = await Promise.all([
     listNewsCategories(),
@@ -21,15 +24,26 @@ export default async function PublicNewsPage({ searchParams }: NewsPageProps) {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       {/* Page Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
-          {locale === "th" ? "ข่าวสารและกิจกรรม" : "News & Announcements"}
-        </h1>
-        <p className="text-base text-muted-foreground">
-          {locale === "th"
-            ? "ศูนย์รวมข่าวประชาสัมพันธ์ กิจกรรม และประกาศสำคัญของหลักสูตรรัฐศาสตรบัณฑิต"
-            : "Official news, announcements, and academic updates of Bachelor of Political Science Program"}
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
+            {locale === "th" ? "ข่าวสารและกิจกรรม" : "News & Announcements"}
+          </h1>
+          <p className="text-base text-muted-foreground">
+            {locale === "th"
+              ? "ศูนย์รวมข่าวประชาสัมพันธ์ กิจกรรม และประกาศสำคัญของหลักสูตรรัฐศาสตรบัณฑิต"
+              : "Official news, announcements, and academic updates of Bachelor of Political Science Program"}
+          </p>
+        </div>
+        {canManageNews && (
+          <Link
+            href="/admin/news"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm transition-all shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{locale === "th" ? "จัดการข่าวสาร / เพิ่มข่าวใหม่" : "Manage News"}</span>
+          </Link>
+        )}
       </div>
 
       {/* Filter & Search Toolbar */}

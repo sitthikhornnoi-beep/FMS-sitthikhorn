@@ -1,13 +1,15 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Calendar, Eye, Sparkles, BookOpen, Users, FileText, Building2, Pin } from "lucide-react";
+import { ArrowRight, Calendar, Eye, Sparkles, BookOpen, Users, FileText, Building2, Pin, Phone, Mail, Clock, MapPin } from "lucide-react";
 import { listPublishedArticles } from "@/features/news/server";
 import { getLocale } from "@/shared/lib/i18n/server";
 import { formatDate } from "@/shared/lib/format";
+import { getPortalTenantSettings } from "@/features/identity/server";
 import { ConveyorHero } from "./_components/conveyor-hero";
 
 export default async function PortalHomePage() {
   const locale = await getLocale();
+  const tenant = await getPortalTenantSettings();
   const articles = await listPublishedArticles(undefined, { limit: 6 });
   const featured = articles.filter((a) => a.isPinned).slice(0, 2);
   const recent = articles.slice(0, 6);
@@ -241,6 +243,87 @@ export default async function PortalHomePage() {
                   : "Real-time room and vehicle scheduling system."}
               </p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 📍 CONTACT & LOCATION SECTION */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="rounded-3xl border border-border/80 bg-gradient-to-br from-card via-card to-primary/5 p-8 sm:p-12 shadow-sm">
+          <div className="max-w-2xl mb-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-3">
+              <Phone className="w-3.5 h-3.5" />
+              <span>{locale === "th" ? "ช่องทางการติดต่อ" : "Contact & Channels"}</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              {locale === "th" ? "ติดต่อสำนักงานหลักสูตร" : "Contact Program Office"}
+            </h2>
+            <p className="text-sm text-muted-foreground mt-2">
+              {locale === "th"
+                ? "สอบถามข้อมูลการรับสมัคร แผนการศึกษา กิจกรรม หรือการบริการของหลักสูตร"
+                : "Inquiries regarding admissions, curriculum, events, or student services"}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Phone Card */}
+            <a
+              href={`tel:${tenant?.org?.contactPhone || "089 5336056"}`}
+              className="p-5 rounded-2xl border border-border/60 bg-background/80 hover:bg-background hover:shadow-md transition-all flex items-start gap-3.5 group"
+            >
+              <div className="p-2.5 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0">
+                <Phone className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-xs text-muted-foreground font-medium">{locale === "th" ? "โทรศัพท์" : "Phone"}</span>
+                <p className="font-semibold text-sm text-foreground mt-0.5">{tenant?.org?.contactPhone || "089 5336056"}</p>
+                <span className="text-[11px] text-primary mt-1 inline-block">{locale === "th" ? "โทรออกทันที →" : "Call now →"}</span>
+              </div>
+            </a>
+
+            {/* Email Card */}
+            <a
+              href={`mailto:${tenant?.org?.contactEmail || "sitthikhorn.pha@mcu.ac.th"}`}
+              className="p-5 rounded-2xl border border-border/60 bg-background/80 hover:bg-background hover:shadow-md transition-all flex items-start gap-3.5 group"
+            >
+              <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors shrink-0">
+                <Mail className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-xs text-muted-foreground font-medium">{locale === "th" ? "อีเมลทางการ" : "Official Email"}</span>
+                <p className="font-semibold text-sm text-foreground mt-0.5 break-all">{tenant?.org?.contactEmail || "sitthikhorn.pha@mcu.ac.th"}</p>
+                <span className="text-[11px] text-blue-600 dark:text-blue-400 mt-1 inline-block">{locale === "th" ? "ส่งอีเมล →" : "Send email →"}</span>
+              </div>
+            </a>
+
+            {/* Office Hours Card */}
+            <div className="p-5 rounded-2xl border border-border/60 bg-background/80 flex items-start gap-3.5">
+              <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 shrink-0">
+                <Clock className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-xs text-muted-foreground font-medium">{locale === "th" ? "วันและเวลาทำการ" : "Office Hours"}</span>
+                <p className="font-semibold text-sm text-foreground mt-0.5">{tenant?.org?.officeHours || "จันทร์ - ศุกร์ 08:30 - 16:30 น."}</p>
+                <span className="text-[11px] text-muted-foreground mt-1 inline-block">{locale === "th" ? "เว้นวันหยุดราชการ" : "Except public holidays"}</span>
+              </div>
+            </div>
+
+            {/* Location & Map Card */}
+            <a
+              href={tenant?.org?.mapUrl || "https://maps.google.com/?q=13.6841,101.0743"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-5 rounded-2xl border border-border/60 bg-background/80 hover:bg-background hover:shadow-md transition-all flex items-start gap-3.5 group"
+            >
+              <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors shrink-0">
+                <MapPin className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-xs text-muted-foreground font-medium">{locale === "th" ? "ที่ตั้งสำนักงาน" : "Location"}</span>
+                <p className="font-semibold text-xs text-foreground mt-0.5 line-clamp-2">{tenant?.org?.address || "158 ถนนศรีโสธร ตำบลหน้าเมือง อำเภอเมืองฉะเชิงเทรา 24000"}</p>
+                <span className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 inline-block">{locale === "th" ? "เปิดแผนที่ Google Maps →" : "Open Google Maps →"}</span>
+              </div>
+            </a>
           </div>
         </div>
       </section>
