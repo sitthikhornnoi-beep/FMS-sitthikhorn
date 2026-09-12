@@ -24,6 +24,10 @@ export interface OrgConfig {
   contactEmail: string;
   contactPhone: string;
   address: string;
+  facebook?: string;
+  line?: string;
+  officeHours?: string;
+  mapUrl?: string;
 }
 
 export interface TenantSettings {
@@ -79,6 +83,10 @@ async function readTenantSettings(tenantId: string, db: Db): Promise<TenantSetti
       contactEmail: o?.contactEmail ?? "",
       contactPhone: o?.contactPhone ?? "",
       address: o?.address ?? "",
+      facebook: o?.facebook ?? "",
+      line: o?.line ?? "",
+      officeHours: o?.officeHours ?? "",
+      mapUrl: o?.mapUrl ?? "",
     },
   };
 }
@@ -178,5 +186,15 @@ export const resolvePalette = cache(async (): Promise<PaletteId> => {
     return tenantId ? await getTenantPalette(tenantId) : DEFAULT_PALETTE;
   } catch {
     return DEFAULT_PALETTE;
+  }
+});
+
+/** ดึงการตั้งค่าองค์กรและข้อมูลติดต่อสำหรับแสดงผลในหน้า Public Portal */
+export const getPortalTenantSettings = cache(async (): Promise<TenantSettings | null> => {
+  try {
+    const tenantId = (await sessionTenantId()) || (await prisma.tenant.findFirst({ orderBy: { createdAt: "asc" }, select: { id: true } }))?.id;
+    return tenantId ? await getTenantSettings(tenantId) : null;
+  } catch {
+    return null;
   }
 });

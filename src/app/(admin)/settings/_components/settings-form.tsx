@@ -16,6 +16,7 @@ import {
   Crop,
   Building2,
   FileText,
+  Phone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LiyonCard, LiyonField, LiyonSwitchRow, PalettePicker } from "@/shared/components/liyon";
@@ -43,6 +44,10 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
       contactEmail: initial.org?.contactEmail ?? "",
       contactPhone: initial.org?.contactPhone ?? "",
       address: initial.org?.address ?? "",
+      facebook: initial.org?.facebook ?? "",
+      line: initial.org?.line ?? "",
+      officeHours: initial.org?.officeHours ?? "",
+      mapUrl: initial.org?.mapUrl ?? "",
     },
     smtp: {
       enabled: initial.smtp?.enabled ?? false,
@@ -332,7 +337,121 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
           </div>
         </LiyonCard>
 
-        {/* Card 3: Brand Colour Palette (ระบบปรับโทนสี อยู่ถัดจากข้อความองค์กร) */}
+        {/* Card 3: ข้อมูลการติดต่อสำหรับแสดงผลหน้าเว็บไซต์ (Public Portal Contact Information) */}
+        <LiyonCard>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+            <div>
+              <div className="flex items-center gap-2">
+                <Phone className="w-5 h-5 text-primary" />
+                <h2 className="!mb-0">{t("settings.contactSectionTitle")}</h2>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                {t("settings.contactSectionDesc")}
+              </p>
+            </div>
+          </div>
+
+          <div className="fields">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <LiyonField label={t("settings.contactPhone")} htmlFor="s-phone">
+                <input
+                  id="s-phone"
+                  type="tel"
+                  placeholder="02-xxx-xxxx หรือ 08x-xxx-xxxx"
+                  value={form.org.contactPhone}
+                  onChange={(e) =>
+                    setForm({ ...form, org: { ...form.org, contactPhone: e.target.value } })
+                  }
+                />
+              </LiyonField>
+              <LiyonField label={t("settings.contactEmail")} htmlFor="s-email">
+                <input
+                  id="s-email"
+                  type="email"
+                  placeholder="contact@fms.example.ac.th"
+                  value={form.org.contactEmail}
+                  onChange={(e) =>
+                    setForm({ ...form, org: { ...form.org, contactEmail: e.target.value } })
+                  }
+                />
+              </LiyonField>
+              <LiyonField label={t("settings.website")} htmlFor="s-website">
+                <input
+                  id="s-website"
+                  type="url"
+                  placeholder="https://fms.example.ac.th"
+                  value={form.org.website}
+                  onChange={(e) =>
+                    setForm({ ...form, org: { ...form.org, website: e.target.value } })
+                  }
+                />
+              </LiyonField>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <LiyonField label={t("settings.officeHours")} htmlFor="s-office-hours">
+                <input
+                  id="s-office-hours"
+                  type="text"
+                  placeholder="จันทร์ - ศุกร์ 08:30 - 16:30 น."
+                  value={form.org.officeHours}
+                  onChange={(e) =>
+                    setForm({ ...form, org: { ...form.org, officeHours: e.target.value } })
+                  }
+                />
+              </LiyonField>
+              <LiyonField label={t("settings.facebook")} htmlFor="s-facebook">
+                <input
+                  id="s-facebook"
+                  type="text"
+                  placeholder="https://facebook.com/..."
+                  value={form.org.facebook}
+                  onChange={(e) =>
+                    setForm({ ...form, org: { ...form.org, facebook: e.target.value } })
+                  }
+                />
+              </LiyonField>
+              <LiyonField label={t("settings.line")} htmlFor="s-line">
+                <input
+                  id="s-line"
+                  type="text"
+                  placeholder="@lineid หรือ ลิงก์ LINE"
+                  value={form.org.line}
+                  onChange={(e) =>
+                    setForm({ ...form, org: { ...form.org, line: e.target.value } })
+                  }
+                />
+              </LiyonField>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <LiyonField label={t("settings.address")} htmlFor="s-address">
+                <input
+                  id="s-address"
+                  type="text"
+                  placeholder="อาคาร 1 คณะวิทยาการจัดการ มหาวิทยาลัย..."
+                  value={form.org.address}
+                  onChange={(e) =>
+                    setForm({ ...form, org: { ...form.org, address: e.target.value } })
+                  }
+                />
+              </LiyonField>
+              <LiyonField label={t("settings.mapUrl")} htmlFor="s-map-url">
+                <input
+                  id="s-map-url"
+                  type="url"
+                  placeholder="https://maps.google.com/..."
+                  value={form.org.mapUrl}
+                  onChange={(e) =>
+                    setForm({ ...form, org: { ...form.org, mapUrl: e.target.value } })
+                  }
+                />
+              </LiyonField>
+            </div>
+          </div>
+        </LiyonCard>
+
+        {/* Card 4: Brand Colour Palette (ระบบปรับโทนสี อยู่ถัดจากข้อความองค์กร) */}
         <LiyonCard>
           <h2>{t("settings.brandTitle")}</h2>
           <p>{t("settings.brandDesc")}</p>
@@ -603,6 +722,10 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
           contactEmail: form.org.contactEmail,
           contactPhone: form.org.contactPhone,
           address: form.org.address,
+          facebook: form.org.facebook,
+          line: form.org.line,
+          officeHours: form.org.officeHours,
+          mapUrl: form.org.mapUrl,
         }}
         logoUrl={form.logoUrl}
         onApply={(updated) => {
@@ -619,6 +742,10 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
               contactEmail: updated.contactEmail,
               contactPhone: updated.contactPhone,
               address: updated.address,
+              facebook: updated.facebook ?? "",
+              line: updated.line ?? "",
+              officeHours: updated.officeHours ?? "",
+              mapUrl: updated.mapUrl ?? "",
             },
           }));
           toast.success("อัปเดตข้อความองค์กรเรียบร้อยแล้ว (กรุณากดบันทึกเพื่อมีผลถาวร)");

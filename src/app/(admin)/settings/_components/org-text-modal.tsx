@@ -8,6 +8,8 @@ import {
   Mail,
   Phone,
   MapPin,
+  Clock,
+  Share2,
   CheckCircle2,
   Eye,
   FileText,
@@ -34,6 +36,10 @@ export interface OrgFormState {
   contactEmail: string;
   contactPhone: string;
   address: string;
+  facebook?: string;
+  line?: string;
+  officeHours?: string;
+  mapUrl?: string;
 }
 
 interface OrgTextModalProps {
@@ -211,7 +217,36 @@ export function OrgTextModal({
                   />
                 </LiyonField>
               </div>
-              <div className="mt-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+                <LiyonField label={t("settings.officeHours")} htmlFor="modal-office-hours">
+                  <input
+                    id="modal-office-hours"
+                    type="text"
+                    value={draft.officeHours ?? ""}
+                    onChange={(e) => setDraft((prev) => ({ ...prev, officeHours: e.target.value }))}
+                    placeholder="จันทร์ - ศุกร์ 08:30 - 16:30 น."
+                  />
+                </LiyonField>
+                <LiyonField label={t("settings.facebook")} htmlFor="modal-facebook">
+                  <input
+                    id="modal-facebook"
+                    type="text"
+                    value={draft.facebook ?? ""}
+                    onChange={(e) => setDraft((prev) => ({ ...prev, facebook: e.target.value }))}
+                    placeholder="https://facebook.com/..."
+                  />
+                </LiyonField>
+                <LiyonField label={t("settings.line")} htmlFor="modal-line">
+                  <input
+                    id="modal-line"
+                    type="text"
+                    value={draft.line ?? ""}
+                    onChange={(e) => setDraft((prev) => ({ ...prev, line: e.target.value }))}
+                    placeholder="@lineid หรือ ลิงก์ LINE"
+                  />
+                </LiyonField>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
                 <LiyonField label={t("settings.address")} htmlFor="modal-address">
                   <input
                     id="modal-address"
@@ -219,6 +254,15 @@ export function OrgTextModal({
                     value={draft.address}
                     onChange={(e) => setDraft((prev) => ({ ...prev, address: e.target.value }))}
                     placeholder="ที่อยู่สำนักงาน / สำนักงานคณบดี..."
+                  />
+                </LiyonField>
+                <LiyonField label={t("settings.mapUrl")} htmlFor="modal-map-url">
+                  <input
+                    id="modal-map-url"
+                    type="url"
+                    value={draft.mapUrl ?? ""}
+                    onChange={(e) => setDraft((prev) => ({ ...prev, mapUrl: e.target.value }))}
+                    placeholder="https://maps.google.com/..."
                   />
                 </LiyonField>
               </div>
@@ -279,6 +323,24 @@ export function OrgTextModal({
                   <div className="flex items-center gap-1.5">
                     <Phone className="w-3.5 h-3.5 text-primary" />
                     <span>{draft.contactPhone}</span>
+                  </div>
+                )}
+                {draft.officeHours && (
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-primary" />
+                    <span>{draft.officeHours}</span>
+                  </div>
+                )}
+                {draft.facebook && (
+                  <div className="flex items-center gap-1.5">
+                    <Share2 className="w-3.5 h-3.5 text-primary" />
+                    <span>{draft.facebook}</span>
+                  </div>
+                )}
+                {draft.line && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold text-primary">LINE:</span>
+                    <span>{draft.line}</span>
                   </div>
                 )}
                 {draft.address && (

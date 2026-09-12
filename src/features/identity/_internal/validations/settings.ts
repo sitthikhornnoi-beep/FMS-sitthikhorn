@@ -20,6 +20,10 @@ export const orgContentSchema = z.object({
   contactEmail: z.string().trim().max(255).optional().default(""),
   contactPhone: z.string().trim().max(50).optional().default(""),
   address: z.string().trim().max(500).optional().default(""),
+  facebook: z.string().trim().max(255).optional().default(""),
+  line: z.string().trim().max(100).optional().default(""),
+  officeHours: z.string().trim().max(255).optional().default(""),
+  mapUrl: z.string().trim().max(1000).optional().default(""),
 });
 
 export const updateSettingsSchema = z.object({
