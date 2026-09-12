@@ -2,7 +2,7 @@ import "dotenv/config";
 import { PrismaClient } from "../src/generated/prisma";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
-import { seedCore, seedUser } from "./lib/seed-core";
+import { seedCore, seedUser, DEFAULT_ORG_SETTINGS } from "./lib/seed-core";
 import { requireDatabaseUrl } from "./lib/require-database-url";
 
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: requireDatabaseUrl() }) });
@@ -15,7 +15,23 @@ async function main() {
     console.error("[seed] ปฏิเสธ: NODE_ENV=production — ใช้ npm run db:bootstrap แทน");
     process.exit(1);
   }
-  const core = await seedCore(prisma, { tenantCode: "DEMO", nameTh: "องค์กรตัวอย่าง", nameEn: "Sample Organization" });
+  const core = await seedCore(prisma, {
+    tenantCode: "DEMO",
+    nameTh: "หลักสูตรรัฐศาสตรบัณฑิต วิทยาลัยสงฆ์พุทธโสธร",
+    nameEn: "Bachelor of Political Science Program, Phutthasothon Buddhist College",
+  });
+
+  // Ensure contact info is present in tenant settings
+  const existingTenant = await prisma.tenant.findUnique({ where: { id: core.tenantId }, select: { settings: true } });
+  const currSettings = (existingTenant?.settings as { org?: unknown } | null) ?? {};
+  if (!currSettings.org) {
+    await prisma.tenant.update({
+      where: { id: core.tenantId },
+      data: {
+        settings: { ...currSettings, org: DEFAULT_ORG_SETTINGS },
+      },
+    });
+  }
   const hash = await bcrypt.hash(DEV_PASSWORD, 12);
   const users = [
     { email: "admin@app.local", name: "ผู้ดูแลสูงสุด", roles: ["SUPER_ADMIN"] },

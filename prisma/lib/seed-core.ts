@@ -5,12 +5,37 @@ import { DEFAULT_ROLES } from "../../src/features/identity/permissions";
 export interface SeedCoreOptions { tenantCode: string; nameTh: string; nameEn: string }
 export interface SeedCoreResult { tenantId: string; roleIds: Record<string, string> }
 
+export const DEFAULT_ORG_SETTINGS = {
+  sloganTh: "หลักสูตรรัฐศาสตรบัณฑิต วิทยาลัยสงฆ์พุทธโสธร",
+  sloganEn: "Bachelor of Political Science Program, Phutthasothon Buddhist College",
+  descriptionTh: "จัดการศึกษาพระพุทธศาสนาบูรณาการกับศาสตร์สมัยใหม่ เพื่อพัฒนาจิตใจและสังคม ผลิตบัณฑิตที่มีคุณธรรม เชี่ยวชาญการบริหารงานรัฐกิจ และพร้อมพัฒนาสังคมสู่ความยั่งยืน",
+  descriptionEn: "Empowering visionary leaders and innovative practitioners through Buddhist wisdom and modern political science.",
+  website: "https://fms.example.ac.th",
+  contactEmail: "sitthikhorn.pha@mcu.ac.th",
+  contactPhone: "089 5336056",
+  address: "158 ถนนศรีโสธร ตำบลหน้าเมือง อำเภอเมืองฉะเชิงเทรา จังหวัดฉะเชิงเทรา 24000",
+  facebook: "https://facebook.com/mcu",
+  line: "@mcu",
+  officeHours: "จันทร์ - ศุกร์ 08:30 - 16:30 น.",
+  mapUrl: "https://maps.google.com/?q=13.6841,101.0743",
+};
+
 /** upsert ทั้งหมด รันซ้ำได้ — ใช้โดย seed.ts, bootstrap.ts และ integration test */
 export async function seedCore(db: PrismaClient, opts: SeedCoreOptions): Promise<SeedCoreResult> {
   const tenant = await db.tenant.upsert({
     where: { code: opts.tenantCode },
-    update: { logoUrl: "/uploads/mcu-logo.png" },
-    create: { code: opts.tenantCode, nameTh: opts.nameTh, nameEn: opts.nameEn, logoUrl: "/uploads/mcu-logo.png", settings: { palette: "purple" } },
+    update: {
+      nameTh: opts.nameTh,
+      nameEn: opts.nameEn,
+      logoUrl: "/uploads/mcu-logo.png",
+    },
+    create: {
+      code: opts.tenantCode,
+      nameTh: opts.nameTh,
+      nameEn: opts.nameEn,
+      logoUrl: "/uploads/mcu-logo.png",
+      settings: { palette: "purple", org: DEFAULT_ORG_SETTINGS },
+    },
   });
 
   const permIds: Record<string, string> = {};

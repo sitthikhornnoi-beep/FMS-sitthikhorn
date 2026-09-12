@@ -102,9 +102,16 @@ export default async function ArticleDetailPage({ params }: ArticleDetailPagePro
       )}
 
       {/* Full Content Body */}
-      <div className="prose prose-neutral dark:prose-invert max-w-none text-foreground leading-relaxed space-y-4 text-sm sm:text-base whitespace-pre-line">
-        {content}
-      </div>
+      {/<[a-z][\s\S]*>/i.test(content) ? (
+        <div
+          className="prose prose-neutral dark:prose-invert max-w-none text-foreground leading-relaxed text-sm sm:text-base [&_img]:rounded-xl [&_img]:max-w-full [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-border [&_th]:p-2 [&_td]:border [&_td]:border-border [&_td]:p-2"
+          dangerouslySetInnerHTML={{ __html: content }}
+        />
+      ) : (
+        <div className="prose prose-neutral dark:prose-invert max-w-none text-foreground leading-relaxed space-y-4 text-sm sm:text-base whitespace-pre-line">
+          {content}
+        </div>
+      )}
 
       {/* Article Footer & Action */}
       <footer className="pt-8 border-t border-border flex items-center justify-between">
