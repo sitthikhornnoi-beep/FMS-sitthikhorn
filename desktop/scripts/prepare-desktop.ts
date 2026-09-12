@@ -83,8 +83,12 @@ NEXTAUTH_SECRET="fms_standalone_offline_secret_key_random_2026_super_safe"
     fs.copyFileSync(currentNodeExe, path.join(DIST_DIR, "bin/node/node.exe"));
   }
 
-  // 6. Generate consolidated SQL for database creation
-  console.log("\n[6/6] กำลังรวบรวมไฟล์ฐานข้อมูล fms_init.sql...");
+  // Copy PostgreSQL Binaries from system if present
+  console.log("\n[6/7] กำลังตรวจสอบ Portable PostgreSQL Binaries...");
+  copyPostgreSqlBinaries(path.join(DIST_DIR, "bin/pgsql"));
+
+  // 7. Generate consolidated SQL for database creation
+  console.log("\n[7/7] กำลังรวบรวมไฟล์ฐานข้อมูล fms_init.sql...");
   const migrationsDir = path.join(ROOT_DIR, "prisma/migrations");
   const migrationFolders = fs
     .readdirSync(migrationsDir)
@@ -132,24 +136,96 @@ ON CONFLICT DO NOTHING;
 
   fs.writeFileSync(path.join(DIST_DIR, "data/fms_init.sql"), combinedSql, "utf-8");
 
-  // Instructions for Portable PostgreSQL
-  const pgReadme = `คำแนะนำสำหรับการใส่ Portable PostgreSQL (สำหรับทีมพัฒนา / แพ็กเกจ):
-1. ดาวน์โหลด PostgreSQL Windows Binaries (ZIP) จาก https://www.enterprisedb.com/download-postgresql-binaries
-2. แตกไฟล์ ZIP และนำโฟลเดอร์ bin/, share/, lib/ มาวางไว้ในโฟลเดอร์นี้ (bin/pgsql/)
-3. เมื่อรัน FMS-App.vbs ระบบจะทำการ initdb และสร้างฐานข้อมูล fms_offline_db ให้อัตโนมัติใน data/db
-`;
-  fs.writeFileSync(path.join(DIST_DIR, "bin/pgsql/README.txt"), pgReadme, "utf-8");
+  // Compile with Inno Setup if installed
+  compileInnoSetup();
 
   console.log("\n========================================================");
-  console.log("  [สำเร็จ] แพ็กเกจถูกเตรียมพร้อมไว้ที่:");
+  console.log("  [สำเร็จอย่างสมบูรณ์!] แพ็กเกจถูกเตรียมพร้อมไว้ที่:");
   console.log(`  ${DIST_DIR}`);
   console.log("========================================================");
-  console.log("\nขั้นตอนต่อไป:");
-  console.log("1. วางไฟล์ Portable PostgreSQL ลงใน dist/FMS-Windows-App/bin/pgsql/");
-  console.log("2. สามารถทดสอบรัน FMS ได้โดยตรงด้วยการดับเบิลคลิก FMS-App.vbs");
-  console.log("3. หากต้องการสร้างไฟล์ติดตั้ง .exe (Setup Wizard):");
-  console.log("   เปิดไฟล์ desktop/inno-setup/setup.iss ด้วยโปรแกรม Inno Setup Compiler แล้วกด Compile (F9)");
-  console.log("   จะได้ไฟล์ FMS-Faculty-System-Setup.exe ใน dist/installer/\n");
+}
+
+function copyPostgreSqlBinaries(destPgsqlDir: string): boolean {
+  const possiblePaths = [
+    "C:\\Program Files\\PostgreSQL\\17",
+    "C:\\Program Files\\PostgreSQL\\16",
+    "C:\\Program Files\\PostgreSQL\\15",
+  ];
+  const foundBase = possiblePaths.find((p) => fs.existsSync(p));
+  if (!foundBase) {
+    console.log("[คำแนะนำ] ไม่พบการติดตั้ง PostgreSQL บนระบบสำหรับคัดลอกไฟล์ binaries อัตโนมัติ");
+    return false;
+  }
+
+  console.log(`พบ PostgreSQL บนระบบที่: ${foundBase}`);
+  console.log("กำลังคัดลอก Portable PostgreSQL Binaries (bin, lib, share)...");
+
+  // Copy bin
+  const srcBin = path.join(foundBase, "bin");
+  const destBin = path.join(destPgsqlDir, "bin");
+  fs.mkdirSync(destBin, { recursive: true });
+
+  const binFiles = fs.readdirSync(srcBin);
+  for (const file of binFiles) {
+    const lower = file.toLowerCase();
+    if (
+      lower.endsWith(".dll") ||
+      lower === "postgres.exe" ||
+      lower === "initdb.exe" ||
+      lower === "pg_ctl.exe" ||
+      lower === "psql.exe" ||
+      lower === "createdb.exe" ||
+      lower === "dropdb.exe" ||
+      lower === "pg_dump.exe" ||
+      lower === "pg_restore.exe"
+    ) {
+      fs.copyFileSync(path.join(srcBin, file), path.join(destBin, file));
+    }
+  }
+
+  // Copy lib
+  const srcLib = path.join(foundBase, "lib");
+  const destLib = path.join(destPgsqlDir, "lib");
+  if (fs.existsSync(srcLib)) {
+    fs.cpSync(srcLib, destLib, { recursive: true });
+  }
+
+  // Copy share
+  const srcShare = path.join(foundBase, "share");
+  const destShare = path.join(destPgsqlDir, "share");
+  if (fs.existsSync(srcShare)) {
+    fs.cpSync(srcShare, destShare, { recursive: true });
+  }
+
+  console.log("[สำเร็จ] คัดลอก Portable PostgreSQL Binaries เรียบร้อยแล้ว");
+  return true;
+}
+
+function compileInnoSetup() {
+  const isccPaths = [
+    path.join(process.env.LOCALAPPDATA || "", "Programs/Inno Setup 6/ISCC.exe"),
+    "C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe",
+    "C:\\Program Files\\Inno Setup 6\\ISCC.exe",
+  ];
+  const isccExe = isccPaths.find((p) => fs.existsSync(p));
+  if (!isccExe) {
+    console.log("\n[หมายเหตุ] ไม่พบ Inno Setup Compiler (ISCC.exe) ข้ามขั้นตอนคอมไพล์ .exe อัตโนมัติ");
+    return;
+  }
+
+  console.log("\nกำลังคอมไพล์ไฟล์ติดตั้ง FMS-Faculty-System-Setup.exe ด้วย Inno Setup...");
+  const issFile = path.join(ROOT_DIR, "desktop/inno-setup/setup.iss");
+  fs.mkdirSync(path.join(ROOT_DIR, "dist/installer"), { recursive: true });
+  try {
+    execSync(`"${isccExe}" "${issFile}"`, {
+      stdio: "inherit",
+      cwd: path.join(ROOT_DIR, "desktop/inno-setup"),
+    });
+    console.log("\n[สำเร็จยอดเยี่ยม!] ไฟล์ตัวติดตั้ง Windows (.exe) ถูกสร้างเรียบร้อยแล้วที่:");
+    console.log(path.join(ROOT_DIR, "dist/installer/FMS-Faculty-System-Setup.exe"));
+  } catch (err) {
+    console.error("การคอมไพล์ Inno Setup ขัดข้อง:", err);
+  }
 }
 
 main().catch((err) => {
