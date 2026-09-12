@@ -23,6 +23,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:bootstrap": "tsx prisma/bootstrap.ts",
     "sync:liyon": "tsx scripts/sync-liyon-theme.ts",
+    "build:desktop": "tsx desktop/scripts/prepare-desktop.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
