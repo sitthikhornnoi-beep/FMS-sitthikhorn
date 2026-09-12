@@ -6,6 +6,7 @@ import {
   Edit2,
   Trash2,
   BookOpen,
+  Building2,
   GraduationCap,
   Search,
   ExternalLink,
@@ -27,28 +28,22 @@ import {
   type DataTableColumn,
 } from "@/shared/components/liyon";
 import { Button } from "@/components/ui/button";
-import type { ProgramDto, DegreeLevelType } from "@/features/curriculum";
+import type { ProgramDto, DegreeLevelType, DepartmentWithProgramsDto } from "@/features/curriculum";
 import { deleteProgramAction } from "@/features/curriculum/actions";
 import { ProgramFormDialog } from "./program-form-dialog";
 import { ProgramStructureDialog } from "./program-structure-dialog";
-
-interface DepartmentOption {
-  id: string;
-  code: string;
-  nameTh: string;
-  nameEn: string;
-}
+import { DepartmentsTab } from "./departments-tab";
 
 interface Props {
   initialPrograms: ProgramDto[];
-  departments: DepartmentOption[];
+  initialDepartments: DepartmentWithProgramsDto[];
   canManage: boolean;
   canCreate: boolean;
 }
 
 export function ProgramsAdminClient({
   initialPrograms,
-  departments,
+  initialDepartments,
   canManage,
   canCreate,
 }: Props) {
@@ -56,7 +51,10 @@ export function ProgramsAdminClient({
   const locale = useLocale();
 
   const [programs, setPrograms] = useState<ProgramDto[]>(initialPrograms);
+  const [departments, setDepartments] = useState<DepartmentWithProgramsDto[]>(initialDepartments);
+  const [activeTab, setActiveTab] = useState<"programs" | "departments">("programs");
   const [isPending, startTransition] = useTransition();
+
 
   // Filters
   const [search, setSearch] = useState("");
@@ -139,6 +137,52 @@ export function ProgramsAdminClient({
       }
     });
   };
+
+  const handleDepartmentSaved = (saved: DepartmentWithProgramsDto) => {
+    setDepartments((prev) => {
+      const idx = prev.findIndex((d) => d.id === saved.id);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = saved;
+        return copy;
+      }
+      return [...prev, saved];
+    });
+
+    setPrograms((prev) =>
+      prev.map((p) =>
+        p.departmentId === saved.id
+          ? {
+              ...p,
+              departmentCode: saved.code,
+              departmentNameTh: saved.nameTh,
+              departmentNameEn: saved.nameEn,
+            }
+          : p
+      )
+    );
+  };
+
+  const handleDepartmentDeleted = (deletedId: string) => {
+    setDepartments((prev) => prev.filter((d) => d.id !== deletedId));
+    setPrograms((prev) =>
+      prev.map((p) =>
+        p.departmentId === deletedId
+          ? {
+              ...p,
+              departmentId: null,
+              departmentCode: null,
+              departmentNameTh: null,
+              departmentNameEn: null,
+            }
+          : p
+      )
+    );
+    if (filterDept === deletedId) {
+      setFilterDept("");
+    }
+  };
+
 
   const getDegreeLevelBadge = (level: DegreeLevelType) => {
     switch (level) {
@@ -237,7 +281,7 @@ export function ProgramsAdminClient({
       </div>
 
       {/* Summary Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         <div className="p-4 rounded-xl border border-border bg-card shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground font-medium">หลักสูตรทั้งหมด</span>
@@ -248,6 +292,22 @@ export function ProgramsAdminClient({
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl font-bold font-mono text-foreground">{stats.total}</span>
             <span className="text-xs text-muted-foreground">หลักสูตร</span>
+          </div>
+        </div>
+
+        <div
+          onClick={() => setActiveTab("departments")}
+          className="p-4 rounded-xl border border-border bg-card shadow-xs hover:border-primary/50 transition-colors cursor-pointer"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground font-medium">ภาควิชา / ส่วนงาน</span>
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+              <Building2 className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl font-bold font-mono text-emerald-600">{departments.length}</span>
+            <span className="text-xs text-muted-foreground">ภาควิชา</span>
           </div>
         </div>
 
@@ -266,7 +326,7 @@ export function ProgramsAdminClient({
 
         <div className="p-4 rounded-xl border border-border bg-card shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground font-medium">ระดับบัณฑิตศึกษา (โท-เอก)</span>
+            <span className="text-xs text-muted-foreground font-medium">บัณฑิตศึกษา (โท-เอก)</span>
             <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-600 flex items-center justify-center">
               <Award className="w-4 h-4" />
             </div>
@@ -280,122 +340,166 @@ export function ProgramsAdminClient({
         <div className="p-4 rounded-xl border border-border bg-card shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground font-medium">เปิดรับสมัครอยู่</span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center">
               <Clock className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold font-mono text-emerald-600">{stats.active}</span>
-            <span className="text-xs text-muted-foreground">เปิดรับสมัคร</span>
+            <span className="text-2xl font-bold font-mono text-amber-600">{stats.active}</span>
+            <span className="text-xs text-muted-foreground">หลักสูตร</span>
           </div>
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-card p-4 rounded-xl border border-border">
-        {/* Degree Level Filter Pills */}
-        <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
-          {[
-            { id: "ALL", label: t("curriculum.filter.allLevels") },
-            { id: "BACHELOR", label: t("curriculum.level.bachelor") },
-            { id: "MASTER", label: t("curriculum.level.master") },
-            { id: "DOCTORATE", label: t("curriculum.level.doctorate") },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setFilterLevel(tab.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                filterLevel === tab.id
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      {/* Tabs Switcher: Programs vs Departments */}
+      <div className="flex border-b border-border space-x-6">
+        <button
+          type="button"
+          onClick={() => setActiveTab("programs")}
+          className={`pb-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors cursor-pointer ${
+            activeTab === "programs"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <BookOpen className="w-4 h-4" />
+          <span>{t("curriculum.tab.programs")} ({programs.length})</span>
+        </button>
 
-        {/* Department Filter & Search */}
-        <div className="flex items-center gap-2.5 w-full sm:w-auto">
-          <div className="w-48">
-            <LiyonSelect
-              value={filterDept}
-              onChange={(e) => setFilterDept(e.target.value)}
-              className="text-xs"
-            >
-              <option value="">{t("curriculum.filter.allDepartments")}</option>
-              {departments.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.code} - {d.nameTh}
-                </option>
+        <button
+          type="button"
+          onClick={() => setActiveTab("departments")}
+          className={`pb-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors cursor-pointer ${
+            activeTab === "departments"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Building2 className="w-4 h-4" />
+          <span>{t("curriculum.tab.departments")} ({departments.length})</span>
+        </button>
+      </div>
+
+      {activeTab === "departments" ? (
+        <DepartmentsTab
+          departments={departments}
+          canManage={canManage}
+          onDepartmentSaved={handleDepartmentSaved}
+          onDepartmentDeleted={handleDepartmentDeleted}
+          onSelectDepartmentFilter={(deptId) => {
+            setFilterDept(deptId);
+            setActiveTab("programs");
+          }}
+        />
+      ) : (
+        <>
+          {/* Filter and Search Bar */}
+          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-card p-4 rounded-xl border border-border">
+            {/* Degree Level Filter Pills */}
+            <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
+              {[
+                { id: "ALL", label: t("curriculum.filter.allLevels") },
+                { id: "BACHELOR", label: t("curriculum.level.bachelor") },
+                { id: "MASTER", label: t("curriculum.level.master") },
+                { id: "DOCTORATE", label: t("curriculum.level.doctorate") },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setFilterLevel(tab.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                    filterLevel === tab.id
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  {tab.label}
+                </button>
               ))}
-            </LiyonSelect>
+            </div>
+
+            {/* Department Filter & Search */}
+            <div className="flex items-center gap-2.5 w-full sm:w-auto">
+              <div className="w-48">
+                <LiyonSelect
+                  value={filterDept}
+                  onChange={(e) => setFilterDept(e.target.value)}
+                  className="text-xs"
+                >
+                  <option value="">{t("curriculum.filter.allDepartments")}</option>
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.code} - {d.nameTh}
+                    </option>
+                  ))}
+                </LiyonSelect>
+              </div>
+
+              <div className="relative flex-1 sm:w-56">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="ค้นหาหลักสูตร, รหัส, ปริญญา..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 text-xs bg-background border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="relative flex-1 sm:w-56">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="ค้นหาหลักสูตร, รหัส, ปริญญา..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs bg-background border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Main DataTable */}
-      <div className="bg-card rounded-xl border border-border overflow-hidden">
-        <DataTable
-          state="data"
-          headHeading="รายชื่อหลักสูตรทั้งหมด"
-          headMeta={`(${filteredPrograms.length} หลักสูตร)`}
-          rows={filteredPrograms}
-          columns={columns}
-          getRowId={(p) => p.id}
-          empty={{
-            icon: <BookOpen className="w-8 h-8 opacity-40" />,
-            title: "ไม่พบข้อมูลหลักสูตรที่ตรงกับเงื่อนไขการค้นหา",
-          }}
-          error={{
-            icon: <BookOpen className="w-8 h-8 opacity-40" />,
-            title: "เกิดข้อผิดพลาดในการโหลดหลักสูตร",
-          }}
-          renderRowMenu={(p) => (
-            <>
-              <RowMenuItem onSelect={() => window.open(`/programs/${p.slug}`, "_blank")}>
-                <span className="flex items-center gap-1.5">
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  ดูตัวอย่างหน้าเว็บจริง
-                </span>
-              </RowMenuItem>
-              {canManage && (
+          {/* Main DataTable */}
+          <div className="bg-card rounded-xl border border-border overflow-hidden">
+            <DataTable
+              state="data"
+              headHeading="รายชื่อหลักสูตรทั้งหมด"
+              headMeta={`(${filteredPrograms.length} หลักสูตร)`}
+              rows={filteredPrograms}
+              columns={columns}
+              getRowId={(p) => p.id}
+              empty={{
+                icon: <BookOpen className="w-8 h-8 opacity-40" />,
+                title: "ไม่พบข้อมูลหลักสูตรที่ตรงกับเงื่อนไขการค้นหา",
+              }}
+              error={{
+                icon: <BookOpen className="w-8 h-8 opacity-40" />,
+                title: "เกิดข้อผิดพลาดในการโหลดหลักสูตร",
+              }}
+              renderRowMenu={(p) => (
                 <>
-                  <RowMenuItem onSelect={() => handleOpenStructure(p)}>
+                  <RowMenuItem onSelect={() => window.open(`/programs/${p.slug}`, "_blank")}>
                     <span className="flex items-center gap-1.5">
-                      <Layers className="w-3.5 h-3.5" />
-                      จัดการโครงสร้าง & แผนการเรียน
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      ดูตัวอย่างหน้าเว็บจริง
                     </span>
                   </RowMenuItem>
-                  <RowMenuItem onSelect={() => handleOpenEdit(p)}>
-                    <span className="flex items-center gap-1.5">
-                      <Edit2 className="w-3.5 h-3.5" />
-                      แก้ไขรายละเอียดหลักสูตร
-                    </span>
-                  </RowMenuItem>
-                  <RowMenuItem danger onSelect={() => setDeleteConfirm(p)}>
-                    <span className="flex items-center gap-1.5 text-destructive">
-                      <Trash2 className="w-3.5 h-3.5" />
-                      ลบหลักสูตร
-                    </span>
-                  </RowMenuItem>
+                  {canManage && (
+                    <>
+                      <RowMenuItem onSelect={() => handleOpenStructure(p)}>
+                        <span className="flex items-center gap-1.5">
+                          <Layers className="w-3.5 h-3.5" />
+                          จัดการโครงสร้าง & แผนการเรียน
+                        </span>
+                      </RowMenuItem>
+                      <RowMenuItem onSelect={() => handleOpenEdit(p)}>
+                        <span className="flex items-center gap-1.5">
+                          <Edit2 className="w-3.5 h-3.5" />
+                          แก้ไขรายละเอียดหลักสูตร
+                        </span>
+                      </RowMenuItem>
+                      <RowMenuItem danger onSelect={() => setDeleteConfirm(p)}>
+                        <span className="flex items-center gap-1.5 text-destructive">
+                          <Trash2 className="w-3.5 h-3.5" />
+                          ลบหลักสูตร
+                        </span>
+                      </RowMenuItem>
+                    </>
+                  )}
                 </>
               )}
-            </>
-          )}
-        />
-      </div>
+            />
+          </div>
+        </>
+      )}
 
       {/* Program Create / Edit Dialog */}
       <ProgramFormDialog
@@ -404,7 +508,9 @@ export function ProgramsAdminClient({
         program={editingProgram}
         departments={departments}
         onSaved={handleSaved}
+        onDepartmentCreated={handleDepartmentSaved}
       />
+
 
       {/* Program Structure & Plan Dialog */}
       <ProgramStructureDialog

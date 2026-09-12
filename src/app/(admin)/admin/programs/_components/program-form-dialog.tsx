@@ -11,8 +11,9 @@ import {
   LiyonSelect,
 } from "@/shared/components/liyon";
 import { Button } from "@/components/ui/button";
-import type { ProgramDto, DegreeLevelType } from "@/features/curriculum";
+import type { ProgramDto, DegreeLevelType, DepartmentWithProgramsDto } from "@/features/curriculum";
 import { createProgramAction, updateProgramAction } from "@/features/curriculum/actions";
+import { DeptFormModal } from "./dept-form-modal";
 
 interface DepartmentOption {
   id: string;
@@ -27,9 +28,10 @@ interface Props {
   program: ProgramDto | null;
   departments: DepartmentOption[];
   onSaved: (program: ProgramDto) => void;
+  onDepartmentCreated?: (dept: DepartmentWithProgramsDto) => void;
 }
 
-export function ProgramFormDialog({ open, onOpenChange, program, departments, onSaved }: Props) {
+export function ProgramFormDialog({ open, onOpenChange, program, departments, onSaved, onDepartmentCreated }: Props) {
   if (!open) return null;
   return (
     <ProgramFormDialogInner
@@ -39,15 +41,19 @@ export function ProgramFormDialog({ open, onOpenChange, program, departments, on
       program={program}
       departments={departments}
       onSaved={onSaved}
+      onDepartmentCreated={onDepartmentCreated}
     />
   );
 }
 
-function ProgramFormDialogInner({ open, onOpenChange, program, departments, onSaved }: Props) {
+
+function ProgramFormDialogInner({ open, onOpenChange, program, departments, onSaved, onDepartmentCreated }: Props) {
   const t = useT();
   const isEditing = !!program;
 
   const [loading, setLoading] = useState(false);
+  const [deptList, setDeptList] = useState<DepartmentOption[]>(departments);
+  const [quickDeptOpen, setQuickDeptOpen] = useState(false);
   const [formData, setFormData] = useState({
     code: program?.code || "",
     departmentId: program?.departmentId || "",
@@ -162,8 +168,9 @@ function ProgramFormDialogInner({ open, onOpenChange, program, departments, onSa
   };
 
   return (
-    <LiyonDialog open={open} onOpenChange={onOpenChange}>
-      <form onSubmit={handleSubmit} className="w-full max-w-3xl">
+    <>
+      <LiyonDialog open={open} onOpenChange={onOpenChange}>
+        <form onSubmit={handleSubmit} className="w-full max-w-3xl">
         <LiyonDialogHeader
           title={isEditing ? t("curriculum.btn.edit") : t("curriculum.btn.create")}
           description="กำหนดรายละเอียดหลักสูตร ชื่อปริญญา ปีหลักสูตร และข้อกำหนดทางการศึกษา"
@@ -188,16 +195,25 @@ function ProgramFormDialogInner({ open, onOpenChange, program, departments, onSa
             </div>
 
             <div>
-              <label className="block text-xs font-semibold mb-1 text-foreground">
-                {t("curriculum.field.department")}
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-semibold text-foreground">
+                  {t("curriculum.field.department")}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setQuickDeptOpen(true)}
+                  className="text-[11px] text-primary hover:underline cursor-pointer font-medium"
+                >
+                  {t("curriculum.dept.quickAdd")}
+                </button>
+              </div>
               <LiyonSelect
                 value={formData.departmentId}
                 onChange={(e) => setFormData((prev) => ({ ...prev, departmentId: e.target.value }))}
                 className="text-sm"
               >
                 <option value="">ไม่มี / หลักสูตรกลางคณะ</option>
-                {departments.map((d) => (
+                {deptList.map((d) => (
                   <option key={d.id} value={d.id}>
                     {d.code} - {d.nameTh}
                   </option>
@@ -495,5 +511,21 @@ function ProgramFormDialogInner({ open, onOpenChange, program, departments, onSa
         </LiyonDialogFooter>
       </form>
     </LiyonDialog>
+
+    <DeptFormModal
+      open={quickDeptOpen}
+      onOpenChange={setQuickDeptOpen}
+      department={null}
+      onSaved={(newDept) => {
+        setDeptList((prev) => [
+          ...prev,
+          { id: newDept.id, code: newDept.code, nameTh: newDept.nameTh, nameEn: newDept.nameEn },
+        ]);
+        setFormData((prev) => ({ ...prev, departmentId: newDept.id }));
+        onDepartmentCreated?.(newDept);
+      }}
+    />
+  </>
   );
 }
+

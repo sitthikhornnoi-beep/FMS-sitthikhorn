@@ -10,13 +10,19 @@ import {
   createProgramSchema,
   updateProgramSchema,
   updateProgramStructureSchema,
+  createCurriculumDeptSchema,
+  updateCurriculumDeptSchema,
 } from "./validations";
 import {
   createProgram,
   updateProgram,
   updateProgramStructure,
   deleteProgram,
+  createCurriculumDepartment,
+  updateCurriculumDepartment,
+  deleteCurriculumDepartment,
   type ProgramDto,
+  type DepartmentWithProgramsDto,
 } from "./services";
 
 export async function createProgramAction(input: unknown): Promise<ActionResult<ProgramDto>> {
@@ -66,3 +72,41 @@ export async function deleteProgramAction(id: string): Promise<ActionResult<void
     revalidatePath("/");
   });
 }
+
+export async function createCurriculumDepartmentAction(input: unknown): Promise<ActionResult<DepartmentWithProgramsDto>> {
+  return runAction(async () => {
+    const ctx = await requirePermission(CURRICULUM_P.curriculumManage);
+    const parsed = createCurriculumDeptSchema.parse(input, { error: zodErrorMap(await getLocale()) });
+    const result = await createCurriculumDepartment(ctx.tenantId, parsed);
+    revalidatePath("/admin/programs");
+    revalidatePath("/programs");
+    revalidatePath("/personnel");
+    revalidatePath("/");
+    return result;
+  });
+}
+
+export async function updateCurriculumDepartmentAction(input: unknown): Promise<ActionResult<DepartmentWithProgramsDto>> {
+  return runAction(async () => {
+    const ctx = await requirePermission(CURRICULUM_P.curriculumManage);
+    const parsed = updateCurriculumDeptSchema.parse(input, { error: zodErrorMap(await getLocale()) });
+    const result = await updateCurriculumDepartment(ctx.tenantId, parsed);
+    revalidatePath("/admin/programs");
+    revalidatePath("/programs");
+    revalidatePath("/personnel");
+    revalidatePath("/");
+    return result;
+  });
+}
+
+export async function deleteCurriculumDepartmentAction(id: string): Promise<ActionResult<void>> {
+  return runAction(async () => {
+    const ctx = await requirePermission(CURRICULUM_P.curriculumManage);
+    await deleteCurriculumDepartment(ctx.tenantId, id);
+    revalidatePath("/admin/programs");
+    revalidatePath("/programs");
+    revalidatePath("/personnel");
+    revalidatePath("/");
+  });
+}
+

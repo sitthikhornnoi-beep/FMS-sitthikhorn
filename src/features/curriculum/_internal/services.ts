@@ -5,10 +5,40 @@ import type {
   CreateProgramInput,
   UpdateProgramInput,
   UpdateProgramStructureInput,
+  CreateCurriculumDeptInput,
+  UpdateCurriculumDeptInput,
   PloInput,
   SemesterPlanInput,
   CourseGroupInput,
 } from "./validations";
+
+export interface DepartmentProgramSummaryDto {
+  id: string;
+  code: string;
+  nameTh: string;
+  nameEn: string;
+  degreeLevel: DegreeLevel;
+  degreeShortTh: string;
+  curriculumYear: number;
+  isActive: boolean;
+}
+
+export interface DepartmentWithProgramsDto {
+  id: string;
+  tenantId: string;
+  code: string;
+  nameTh: string;
+  nameEn: string;
+  descriptionTh: string | null;
+  descriptionEn: string | null;
+  type: string;
+  displayOrder: number;
+  isActive: boolean;
+  programCount: number;
+  programs: DepartmentProgramSummaryDto[];
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface ProgramDto {
   id: string;
@@ -348,3 +378,210 @@ export async function deleteProgram(tenantId: string, id: string): Promise<void>
     where: { id },
   });
 }
+
+export async function listDepartmentsWithPrograms(tenantId?: string): Promise<DepartmentWithProgramsDto[]> {
+  const tId = tenantId || (await getDefaultTenantId());
+  const depts = await prisma.department.findMany({
+    where: { tenantId: tId },
+    include: {
+      programs: {
+        select: {
+          id: true,
+          code: true,
+          nameTh: true,
+          nameEn: true,
+          degreeLevel: true,
+          degreeShortTh: true,
+          curriculumYear: true,
+          isActive: true,
+        },
+        orderBy: [{ curriculumYear: "desc" }, { code: "asc" }],
+      },
+      _count: {
+        select: { programs: true },
+      },
+    },
+    orderBy: [{ displayOrder: "asc" }, { code: "asc" }],
+  });
+
+  return depts.map((d) => ({
+    id: d.id,
+    tenantId: d.tenantId,
+    code: d.code,
+    nameTh: d.nameTh,
+    nameEn: d.nameEn,
+    descriptionTh: d.descriptionTh,
+    descriptionEn: d.descriptionEn,
+    type: d.type,
+    displayOrder: d.displayOrder,
+    isActive: d.isActive,
+    programCount: d._count.programs,
+    programs: d.programs.map((p) => ({
+      id: p.id,
+      code: p.code,
+      nameTh: p.nameTh,
+      nameEn: p.nameEn,
+      degreeLevel: p.degreeLevel,
+      degreeShortTh: p.degreeShortTh,
+      curriculumYear: p.curriculumYear,
+      isActive: p.isActive,
+    })),
+    createdAt: d.createdAt.toISOString(),
+    updatedAt: d.updatedAt.toISOString(),
+  }));
+}
+
+export async function createCurriculumDepartment(
+  tenantId: string,
+  input: CreateCurriculumDeptInput
+): Promise<DepartmentWithProgramsDto> {
+  const code = input.code.trim().toUpperCase();
+  const existing = await prisma.department.findUnique({
+    where: { tenantId_code: { tenantId, code } },
+  });
+  if (existing) {
+    throw new Error(`รหัสภาควิชา "${code}" มีอยู่ในระบบแล้ว`);
+  }
+
+  const d = await prisma.department.create({
+    data: {
+      tenantId,
+      code,
+      nameTh: input.nameTh.trim(),
+      nameEn: input.nameEn.trim(),
+      descriptionTh: input.descriptionTh?.trim() || null,
+      descriptionEn: input.descriptionEn?.trim() || null,
+      type: input.type,
+      displayOrder: input.displayOrder,
+      isActive: input.isActive,
+    },
+    include: {
+      programs: {
+        select: {
+          id: true,
+          code: true,
+          nameTh: true,
+          nameEn: true,
+          degreeLevel: true,
+          degreeShortTh: true,
+          curriculumYear: true,
+          isActive: true,
+        },
+      },
+      _count: {
+        select: { programs: true },
+      },
+    },
+  });
+
+  return {
+    id: d.id,
+    tenantId: d.tenantId,
+    code: d.code,
+    nameTh: d.nameTh,
+    nameEn: d.nameEn,
+    descriptionTh: d.descriptionTh,
+    descriptionEn: d.descriptionEn,
+    type: d.type,
+    displayOrder: d.displayOrder,
+    isActive: d.isActive,
+    programCount: 0,
+    programs: [],
+    createdAt: d.createdAt.toISOString(),
+    updatedAt: d.updatedAt.toISOString(),
+  };
+}
+
+export async function updateCurriculumDepartment(
+  tenantId: string,
+  input: UpdateCurriculumDeptInput
+): Promise<DepartmentWithProgramsDto> {
+  const code = input.code.trim().toUpperCase();
+  const existing = await prisma.department.findFirst({
+    where: { tenantId, id: input.id },
+  });
+  if (!existing) {
+    throw new Error("ไม่พบภาควิชาที่ต้องการแก้ไข");
+  }
+
+  if (code !== existing.code) {
+    const codeConflict = await prisma.department.findUnique({
+      where: { tenantId_code: { tenantId, code } },
+    });
+    if (codeConflict && codeConflict.id !== input.id) {
+      throw new Error(`รหัสภาควิชา "${code}" ถูกใช้งานไปแล้ว`);
+    }
+  }
+
+  const d = await prisma.department.update({
+    where: { id: input.id },
+    data: {
+      code,
+      nameTh: input.nameTh.trim(),
+      nameEn: input.nameEn.trim(),
+      descriptionTh: input.descriptionTh?.trim() || null,
+      descriptionEn: input.descriptionEn?.trim() || null,
+      type: input.type,
+      displayOrder: input.displayOrder,
+      isActive: input.isActive,
+    },
+    include: {
+      programs: {
+        select: {
+          id: true,
+          code: true,
+          nameTh: true,
+          nameEn: true,
+          degreeLevel: true,
+          degreeShortTh: true,
+          curriculumYear: true,
+          isActive: true,
+        },
+        orderBy: [{ curriculumYear: "desc" }, { code: "asc" }],
+      },
+      _count: {
+        select: { programs: true },
+      },
+    },
+  });
+
+  return {
+    id: d.id,
+    tenantId: d.tenantId,
+    code: d.code,
+    nameTh: d.nameTh,
+    nameEn: d.nameEn,
+    descriptionTh: d.descriptionTh,
+    descriptionEn: d.descriptionEn,
+    type: d.type,
+    displayOrder: d.displayOrder,
+    isActive: d.isActive,
+    programCount: d._count.programs,
+    programs: d.programs.map((p) => ({
+      id: p.id,
+      code: p.code,
+      nameTh: p.nameTh,
+      nameEn: p.nameEn,
+      degreeLevel: p.degreeLevel,
+      degreeShortTh: p.degreeShortTh,
+      curriculumYear: p.curriculumYear,
+      isActive: p.isActive,
+    })),
+    createdAt: d.createdAt.toISOString(),
+    updatedAt: d.updatedAt.toISOString(),
+  };
+}
+
+export async function deleteCurriculumDepartment(tenantId: string, id: string): Promise<void> {
+  const existing = await prisma.department.findFirst({
+    where: { tenantId, id },
+  });
+  if (!existing) {
+    throw new Error("ไม่พบภาควิชาที่ต้องการลบ");
+  }
+
+  await prisma.department.delete({
+    where: { id },
+  });
+}
+

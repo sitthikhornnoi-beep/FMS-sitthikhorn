@@ -78,3 +78,24 @@ export type CourseGroupInput = z.infer<typeof courseGroupSchema>;
 export type CreateProgramInput = z.infer<typeof createProgramSchema>;
 export type UpdateProgramInput = z.infer<typeof updateProgramSchema>;
 export type UpdateProgramStructureInput = z.infer<typeof updateProgramStructureSchema>;
+
+export const departmentTypeEnum = z.enum(["ACADEMIC", "SUPPORT", "EXECUTIVE"]);
+export type DepartmentType = z.infer<typeof departmentTypeEnum>;
+
+export const createCurriculumDeptSchema = z.object({
+  code: z.string().trim().min(1).max(50),
+  nameTh: z.string().trim().min(1).max(255),
+  nameEn: z.string().trim().min(1).max(255),
+  type: departmentTypeEnum.default("ACADEMIC"),
+  descriptionTh: z.string().trim().optional().nullable().or(z.literal("")),
+  descriptionEn: z.string().trim().optional().nullable().or(z.literal("")),
+  displayOrder: z.number().int().default(0),
+  isActive: z.boolean().default(true),
+});
+
+export const updateCurriculumDeptSchema = createCurriculumDeptSchema.extend({
+  id: z.string().uuid(),
+});
+
+export type CreateCurriculumDeptInput = z.infer<typeof createCurriculumDeptSchema>;
+export type UpdateCurriculumDeptInput = z.infer<typeof updateCurriculumDeptSchema>;

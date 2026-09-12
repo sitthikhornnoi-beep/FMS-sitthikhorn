@@ -3,4 +3,6 @@ export {
   listPrograms,
   getProgramBySlug,
   getProgramById,
+  listDepartmentsWithPrograms,
 } from "./_internal/services";
+

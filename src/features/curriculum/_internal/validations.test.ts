@@ -5,6 +5,8 @@ import {
   updateProgramStructureSchema,
   ploSchema,
   courseItemSchema,
+  createCurriculumDeptSchema,
+  updateCurriculumDeptSchema,
 } from "./validations";
 
 describe("curriculum validations", () => {
@@ -105,4 +107,30 @@ describe("curriculum validations", () => {
     expect(parsed.id).toBe(valid.id);
     expect(parsed.careerPaths).toHaveLength(2);
   });
+
+  it("createCurriculumDeptSchema ตรวจสอบข้อมูลภาควิชาที่ถูกต้อง", () => {
+    const valid = {
+      code: "D-PA",
+      nameTh: "ภาควิชารัฐประศาสนศาสตร์",
+      nameEn: "Department of Public Administration",
+      type: "ACADEMIC" as const,
+      displayOrder: 1,
+    };
+    const parsed = createCurriculumDeptSchema.parse(valid);
+    expect(parsed.code).toBe("D-PA");
+    expect(parsed.type).toBe("ACADEMIC");
+    expect(parsed.isActive).toBe(true);
+  });
+
+  it("updateCurriculumDeptSchema ต้องการ id เป็น UUID", () => {
+    const valid = {
+      id: "123e4567-e89b-12d3-a456-426614174000",
+      code: "D-PA",
+      nameTh: "ภาควิชารัฐประศาสนศาสตร์",
+      nameEn: "Department of Public Administration",
+    };
+    const parsed = updateCurriculumDeptSchema.parse(valid);
+    expect(parsed.id).toBe(valid.id);
+  });
 });
+
