@@ -82,6 +82,7 @@ export function PortalClientLayout({ children, tenant }: PortalClientLayoutProps
     { href: "/booking", labelTh: "จองห้องและยานพาหนะ", labelEn: "Booking", icon: Calendar },
     { href: "/programs", labelTh: "หลักสูตร", labelEn: "Curriculum", icon: BookOpen },
     { href: "/documents", labelTh: "สารบรรณและประกาศ", labelEn: "E-Documents", icon: FileText },
+    { href: "/contact", labelTh: "การติดต่อ", labelEn: "Contact", icon: Phone },
   ];
 
   return (
@@ -112,7 +113,7 @@ export function PortalClientLayout({ children, tenant }: PortalClientLayoutProps
         </Link>
 
         {/* Portal Navigation Items */}
-        <nav className="hidden lg:flex items-center gap-1 min-w-0" aria-label={locale === "th" ? "เมนูหลัก" : "Portal Navigation"}>
+        <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1 min-w-0" aria-label={locale === "th" ? "เมนูหลัก" : "Portal Navigation"}>
           {navLinks.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
@@ -121,7 +122,7 @@ export function PortalClientLayout({ children, tenant }: PortalClientLayoutProps
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--r-sm)] text-[.85rem] font-medium transition-all whitespace-nowrap",
+                  "flex items-center gap-1.5 px-2.5 xl:px-3 py-1.5 rounded-[var(--r-sm)] text-[.82rem] xl:text-[.85rem] font-medium transition-all whitespace-nowrap",
                   isActive
                     ? "bg-[var(--side-active-bg)] text-[var(--side-active-ink)] font-semibold border border-[var(--brand)]/25 shadow-xs"
                     : "text-[var(--text-2)] hover:text-[var(--text)] hover:bg-[var(--glass-hover)]"
@@ -441,6 +442,11 @@ export function PortalClientLayout({ children, tenant }: PortalClientLayoutProps
                 <li>
                   <Link href="/documents" className="hover:text-white transition-colors">
                     {locale === "th" ? "สารบรรณและประกาศ" : "E-Documents"}
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/contact" className="hover:text-white transition-colors">
+                    {locale === "th" ? "ช่องทางการติดต่อ" : "Contact Us"}
                   </Link>
                 </li>
               </ul>
