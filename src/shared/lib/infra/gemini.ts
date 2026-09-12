@@ -1,6 +1,7 @@
 import "server-only";
 import { logger } from "./logger";
 import { prisma } from "./prisma";
+import { errors } from "../errors";
 
 export interface GeminiConfig {
   apiKey: string;
@@ -101,7 +102,9 @@ export async function translateNewsWithGemini(
 ): Promise<NewsTranslationOutput> {
   const cfg = await resolveGeminiConfig(tenantId);
   if (!cfg || !cfg.apiKey) {
-    throw new Error("ยังไม่ได้กำหนด Gemini API Key ในระบบ (กรุณาไปที่หน้า ตั้งค่าระบบ เพื่อระบุ Gemini API Key)");
+    throw errors.validation(
+      "ยังไม่ได้ตั้งค่า Gemini API Key ในระบบ กรุณาไปที่เมนู 'ตั้งค่าระบบ' (/settings) เพื่อเปิดใช้งานและระบุ Google Gemini API Key ก่อนแปลภาษา"
+    );
   }
 
   const prompt = `You are a professional university news translator and public relations editor for MCU (Mahachulalongkornrajavidyalaya University).
@@ -135,13 +138,14 @@ Output STRICT JSON only, without markdown backticks or commentary.`;
 
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    throw new Error(data?.error?.message || `Gemini API error (${res.status})`);
+    const rawMsg = data?.error?.message || `HTTP ${res.status}: ${res.statusText}`;
+    throw errors.validation(`การเชื่อมต่อ Gemini API ล้มเหลว: ${rawMsg}`);
   }
 
   const result = await res.json();
   const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) {
-    throw new Error("ไม่ได้รับผลลัพธ์จาก Gemini API");
+    throw errors.validation("ไม่ได้รับผลลัพธ์ข้อความจาก Gemini API (กรุณากดลองใหม่อีกครั้ง)");
   }
 
   try {
@@ -154,12 +158,17 @@ Output STRICT JSON only, without markdown backticks or commentary.`;
     };
   } catch {
     const cleaned = text.replace(/```json/gi, "").replace(/```/g, "").trim();
-    const parsed = JSON.parse(cleaned);
-    return {
-      titleEn: parsed.titleEn || "",
-      summaryEn: parsed.summaryEn || "",
-      contentEn: parsed.contentEn || "",
-      suggestedSlug: parsed.suggestedSlug || "",
-    };
+    try {
+      const parsed = JSON.parse(cleaned);
+      return {
+        titleEn: parsed.titleEn || "",
+        summaryEn: parsed.summaryEn || "",
+        contentEn: parsed.contentEn || "",
+        suggestedSlug: parsed.suggestedSlug || "",
+      };
+    } catch (err) {
+      logger.warn("Failed to parse Gemini translation response as JSON", { err, text });
+      throw errors.validation("รูปแบบข้อมูลที่ได้รับจาก Gemini ไม่ถูกต้อง ไม่สามารถแยกแยะเนื้อหาแปลได้");
+    }
   }
 }

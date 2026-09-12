@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { useT } from "@/shared/lib/i18n/client";
 import {
@@ -11,7 +12,7 @@ import {
   LiyonField,
   LiyonSelect,
 } from "@/shared/components/liyon";
-import { Sparkles, Loader2, FileCode, Edit3 } from "lucide-react";
+import { Sparkles, Loader2, FileCode, Edit3, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TinyEditor } from "@/components/ui/tiny-editor";
 import type { NewsArticleDto, NewsCategoryDto } from "@/features/news";
@@ -87,11 +88,15 @@ function NewsFormDialogInner({ open, onOpenChange, article, categories, onSaved 
         }
         toast.success(t("news.aiTranslateSuccess"));
       } else {
-        const errMsg = (!res.ok ? res.error.message : "") || "AI translation error";
-        toast.error(t("news.aiTranslateError", { error: errMsg }));
+        const rawErr = !res.ok ? res.error.message : "";
+        const errMsg = rawErr === "internal"
+          ? "ยังไม่ได้ตั้งค่า Gemini API Key หรือการเชื่อมต่อล้มเหลว กรุณาไปที่เมนู 'ตั้งค่าระบบ' (/settings) เพื่อระบุและทดสอบ Gemini API Key"
+          : (rawErr || "AI translation error");
+        toast.error(errMsg.startsWith("การแปล") || errMsg.startsWith("ยังไม่") ? errMsg : t("news.aiTranslateError", { error: errMsg }));
       }
     } catch (e) {
-      toast.error(t("news.aiTranslateError", { error: e instanceof Error ? e.message : String(e) }));
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(t("news.aiTranslateError", { error: msg }));
     } finally {
       setIsTranslating(false);
     }
@@ -178,7 +183,17 @@ function NewsFormDialogInner({ open, onOpenChange, article, categories, onSaved 
               </div>
               <div>
                 <span className="text-xs font-semibold text-foreground">ตัวช่วยแปลข่าว 2 ภาษาด้วย Gemini AI</span>
-                <p className="text-[11px] text-muted-foreground">กรอกข้อมูลภาษาไทยแล้วกดปุ่มนี้เพื่อแปลและสร้างเนื้อหาภาษาอังกฤษอัตโนมัติ</p>
+                <p className="text-[11px] text-muted-foreground flex flex-wrap items-center gap-1">
+                  <span>กรอกข้อมูลภาษาไทยแล้วกดปุ่มนี้เพื่อแปลภาษาอังกฤษอัตโนมัติ</span>
+                  <Link
+                    href="/settings"
+                    target="_blank"
+                    className="text-primary font-medium underline underline-offset-2 hover:opacity-80 inline-flex items-center gap-0.5 ml-1"
+                  >
+                    <span>(ตั้งค่า API Key ที่นี่)</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </Link>
+                </p>
               </div>
             </div>
             <Button

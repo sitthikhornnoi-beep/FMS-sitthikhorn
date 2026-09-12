@@ -49,6 +49,8 @@ services:
       MICROSOFT_TENANT_ID: ${MICROSOFT_TENANT_ID:-common}
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
       BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.0-flash}
     volumes:
       # Persistent storage สำหรับไฟล์ที่อัปโหลด
       - uploads_data:/app/public/uploads
