@@ -70,5 +70,10 @@ export const MESSAGES = {
   "curriculum.dept.deleteConfirmMsg": { th: "คุณแน่ใจหรือไม่ว่าต้องการลบภาควิชานี้? ข้อมูลภาควิชาจะถูกลบออกจากระบบ", en: "Are you sure you want to delete this department?" },
   "curriculum.dept.deleteWarnPrograms": { th: "คำเตือน: ภาควิชานี้มีหลักสูตรสังกัดอยู่ หากลบ หลักสูตรเหล่านี้จะกลายเป็นหลักสูตรกลางคณะโดยไม่สูญหาย", en: "Notice: This department currently stores academic programs. If deleted, these programs will automatically become faculty-wide programs." },
   "curriculum.stats.departments": { th: "ภาควิชา/ส่วนงาน", en: "Departments" },
+  "curriculum.btn.exportJson": { th: "ส่งออก JSON", en: "Export JSON" },
+  "curriculum.btn.importJson": { th: "นำเข้า JSON", en: "Import JSON" },
+  "curriculum.json.importSuccess": { th: "นำเข้าข้อมูลจากไฟล์ JSON สำเร็จ", en: "Program data successfully imported from JSON" },
+  "curriculum.json.importError": { th: "ไฟล์ JSON ไม่ถูกต้องหรือไม่ตรงตามรูปแบบ", en: "Invalid or incompatible JSON file format" },
+  "curriculum.json.exportSuccess": { th: "ส่งออกไฟล์ JSON เรียบร้อยแล้ว", en: "JSON file exported successfully" },
 } as const;
 export const messages = MESSAGES;

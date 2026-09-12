@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { toast } from "sonner";
+import { Download, Upload, FileCode2, CheckCircle2, X } from "lucide-react";
 import { useT } from "@/shared/lib/i18n/client";
 import {
   LiyonDialog,
@@ -11,7 +12,16 @@ import {
   LiyonSelect,
 } from "@/shared/components/liyon";
 import { Button } from "@/components/ui/button";
-import type { ProgramDto, DegreeLevelType, DepartmentWithProgramsDto } from "@/features/curriculum";
+import {
+  exportProgramToJson,
+  parseProgramJson,
+  type ProgramDto,
+  type DegreeLevelType,
+  type DepartmentWithProgramsDto,
+  type PloInput,
+  type CourseGroupInput,
+  type SemesterPlanInput,
+} from "@/features/curriculum";
 import { createProgramAction, updateProgramAction } from "@/features/curriculum/actions";
 import { DeptFormModal } from "./dept-form-modal";
 
@@ -54,6 +64,15 @@ function ProgramFormDialogInner({ open, onOpenChange, program, departments, onSa
   const [loading, setLoading] = useState(false);
   const [deptList, setDeptList] = useState<DepartmentOption[]>(departments);
   const [quickDeptOpen, setQuickDeptOpen] = useState(false);
+  const jsonFileInputRef = useRef<HTMLInputElement>(null);
+  const [extraStructure, setExtraStructure] = useState<{
+    careerPaths?: string[];
+    plos?: PloInput[];
+    studyPlan?: SemesterPlanInput[];
+    courseStructure?: CourseGroupInput[];
+  }>({});
+  const [importedNotice, setImportedNotice] = useState<{ fileName: string; detail: string } | null>(null);
+
   const [formData, setFormData] = useState({
     code: program?.code || "",
     departmentId: program?.departmentId || "",
@@ -94,6 +113,137 @@ function ProgramFormDialogInner({ open, onOpenChange, program, departments, onSa
     }
   };
 
+  const handleExportJson = () => {
+    try {
+      const selectedDept = deptList.find((d) => d.id === formData.departmentId);
+      const jsonString = exportProgramToJson({
+        code: formData.code,
+        nameTh: formData.nameTh,
+        nameEn: formData.nameEn,
+        degreeTh: formData.degreeTh,
+        degreeEn: formData.degreeEn,
+        degreeShortTh: formData.degreeShortTh,
+        degreeShortEn: formData.degreeShortEn,
+        degreeLevel: formData.degreeLevel,
+        departmentCode: selectedDept?.code ?? null,
+        departmentNameTh: selectedDept?.nameTh ?? null,
+        slug: formData.slug,
+        curriculumYear: Number(formData.curriculumYear) || new Date().getFullYear() + 543,
+        totalCredits: Number(formData.totalCredits) || 120,
+        studyDuration: formData.studyDuration,
+        tuitionFee: formData.tuitionFee || null,
+        descriptionTh: formData.descriptionTh || null,
+        descriptionEn: formData.descriptionEn || null,
+        philosophyTh: formData.philosophyTh || null,
+        philosophyEn: formData.philosophyEn || null,
+        pdfUrl: formData.pdfUrl || null,
+        imageUrl: formData.imageUrl || null,
+        displayOrder: Number(formData.displayOrder) || 0,
+        isActive: formData.isActive,
+        careerPaths: extraStructure.careerPaths ?? program?.careerPaths ?? [],
+        plos: extraStructure.plos ?? program?.plos ?? [],
+        studyPlan: extraStructure.studyPlan ?? program?.studyPlan ?? [],
+        courseStructure: extraStructure.courseStructure ?? program?.courseStructure ?? [],
+      });
+
+      const blob = new Blob([jsonString], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const safeCode = (formData.code || formData.slug || "program").replace(/[^a-zA-Z0-9_\u0E00-\u0E7F-]/g, "_");
+      a.href = url;
+      a.download = `program-${safeCode}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success(t("curriculum.json.exportSuccess"));
+    } catch {
+      toast.error("ไม่สามารถส่งออกข้อมูล JSON ได้");
+    }
+  };
+
+  const handleImportJsonFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        const result = parseProgramJson(text);
+        if (!result.success || !result.data) {
+          toast.error(result.error || t("curriculum.json.importError"));
+          return;
+        }
+
+        const data = result.data;
+        let matchedDeptId = formData.departmentId;
+        if (data.departmentCode) {
+          const found = deptList.find((d) => d.code === data.departmentCode);
+          if (found) matchedDeptId = found.id;
+        }
+
+        setFormData((prev) => ({
+          code: data.code || prev.code,
+          departmentId: matchedDeptId,
+          degreeLevel: (data.degreeLevel as DegreeLevelType) || prev.degreeLevel,
+          nameTh: data.nameTh || prev.nameTh,
+          nameEn: data.nameEn !== undefined ? data.nameEn : prev.nameEn,
+          degreeTh: data.degreeTh !== undefined ? data.degreeTh : prev.degreeTh,
+          degreeEn: data.degreeEn !== undefined ? data.degreeEn : prev.degreeEn,
+          degreeShortTh: data.degreeShortTh !== undefined ? data.degreeShortTh : prev.degreeShortTh,
+          degreeShortEn: data.degreeShortEn !== undefined ? data.degreeShortEn : prev.degreeShortEn,
+          slug: data.slug || prev.slug,
+          curriculumYear: data.curriculumYear ?? prev.curriculumYear,
+          totalCredits: data.totalCredits ?? prev.totalCredits,
+          studyDuration: data.studyDuration || prev.studyDuration,
+          tuitionFee: data.tuitionFee !== undefined && data.tuitionFee !== null ? data.tuitionFee : prev.tuitionFee,
+          descriptionTh: data.descriptionTh !== undefined && data.descriptionTh !== null ? data.descriptionTh : prev.descriptionTh,
+          descriptionEn: data.descriptionEn !== undefined && data.descriptionEn !== null ? data.descriptionEn : prev.descriptionEn,
+          philosophyTh: data.philosophyTh !== undefined && data.philosophyTh !== null ? data.philosophyTh : prev.philosophyTh,
+          philosophyEn: data.philosophyEn !== undefined && data.philosophyEn !== null ? data.philosophyEn : prev.philosophyEn,
+          pdfUrl: data.pdfUrl !== undefined && data.pdfUrl !== null ? data.pdfUrl : prev.pdfUrl,
+          imageUrl: data.imageUrl !== undefined && data.imageUrl !== null ? data.imageUrl : prev.imageUrl,
+          displayOrder: data.displayOrder ?? prev.displayOrder,
+          isActive: data.isActive ?? prev.isActive,
+        }));
+
+        const hasExtras =
+          (data.careerPaths && data.careerPaths.length > 0) ||
+          (data.plos && data.plos.length > 0) ||
+          (data.studyPlan && data.studyPlan.length > 0) ||
+          (data.courseStructure && data.courseStructure.length > 0);
+
+        if (hasExtras) {
+          setExtraStructure({
+            careerPaths: data.careerPaths,
+            plos: data.plos,
+            studyPlan: data.studyPlan,
+            courseStructure: data.courseStructure,
+          });
+        }
+
+        const summaryParts: string[] = [];
+        if (result.summary?.hasCourseStructure) summaryParts.push(`โครงสร้างวิชา ${result.summary.hasCourseStructure} กลุ่ม`);
+        if (result.summary?.hasPlos) summaryParts.push(`PLO ${result.summary.hasPlos} ข้อ`);
+        if (result.summary?.hasStudyPlan) summaryParts.push(`แผนการเรียน ${result.summary.hasStudyPlan} ภาค`);
+        if (result.summary?.hasCareerPaths) summaryParts.push(`อาชีพ ${result.summary.hasCareerPaths} รายการ`);
+
+        setImportedNotice({
+          fileName: file.name,
+          detail: summaryParts.length > 0 ? `พบข้อมูลเพิ่มเติม: ${summaryParts.join(", ")}` : "นำเข้าข้อมูลหลักสูตรเรียบร้อย",
+        });
+
+        toast.success(t("curriculum.json.importSuccess"));
+      } catch {
+        toast.error(t("curriculum.json.importError"));
+      } finally {
+        if (jsonFileInputRef.current) jsonFileInputRef.current.value = "";
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.code.trim() || !formData.nameTh.trim() || !formData.slug.trim()) {
@@ -132,10 +282,10 @@ function ProgramFormDialogInner({ open, onOpenChange, program, departments, onSa
         const res = await updateProgramAction({
           ...payload,
           id: program.id,
-          careerPaths: program.careerPaths,
-          plos: program.plos,
-          studyPlan: program.studyPlan,
-          courseStructure: program.courseStructure,
+          careerPaths: extraStructure.careerPaths ?? program.careerPaths,
+          plos: extraStructure.plos ?? program.plos,
+          studyPlan: extraStructure.studyPlan ?? program.studyPlan,
+          courseStructure: extraStructure.courseStructure ?? program.courseStructure,
         });
         if (res.ok) {
           toast.success("บันทึกการแก้ไขหลักสูตรสำเร็จ");
@@ -147,10 +297,10 @@ function ProgramFormDialogInner({ open, onOpenChange, program, departments, onSa
       } else {
         const res = await createProgramAction({
           ...payload,
-          careerPaths: [],
-          plos: [],
-          studyPlan: [],
-          courseStructure: [],
+          careerPaths: extraStructure.careerPaths ?? [],
+          plos: extraStructure.plos ?? [],
+          studyPlan: extraStructure.studyPlan ?? [],
+          courseStructure: extraStructure.courseStructure ?? [],
         });
         if (res.ok) {
           toast.success("สร้างหลักสูตรใหม่สำเร็จ");
@@ -177,6 +327,62 @@ function ProgramFormDialogInner({ open, onOpenChange, program, departments, onSa
         />
 
         <LiyonDialogBody className="space-y-4 max-h-[72vh] overflow-y-auto pr-1">
+          {/* JSON Import / Export Action Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-lg bg-muted/40 border border-border/70 text-xs">
+            <div className="flex items-center gap-2 text-muted-foreground font-medium">
+              <FileCode2 className="h-4 w-4 text-primary shrink-0" />
+              <span>จัดการข้อมูลหลักสูตรด้วย JSON</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <input
+                type="file"
+                ref={jsonFileInputRef}
+                accept=".json,application/json"
+                onChange={handleImportJsonFile}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => jsonFileInputRef.current?.click()}
+                className="h-7 px-2.5 text-xs gap-1.5 cursor-pointer hover:bg-background"
+              >
+                <Upload className="h-3.5 w-3.5 text-primary" />
+                {t("curriculum.btn.importJson")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleExportJson}
+                className="h-7 px-2.5 text-xs gap-1.5 cursor-pointer hover:bg-background"
+              >
+                <Download className="h-3.5 w-3.5 text-primary" />
+                {t("curriculum.btn.exportJson")}
+              </Button>
+            </div>
+          </div>
+
+          {/* Imported JSON Notification Banner */}
+          {importedNotice && (
+            <div className="flex items-start justify-between gap-2 p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-200">
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 mt-0.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <div>
+                  <p className="font-semibold">นำเข้าข้อมูลจากไฟล์: {importedNotice.fileName}</p>
+                  <p className="text-[11px] text-emerald-700 dark:text-emerald-300">{importedNotice.detail}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setImportedNotice(null)}
+                className="text-emerald-600 hover:text-emerald-900 dark:hover:text-emerald-100 p-0.5 cursor-pointer"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
           {/* Degree Level & Department */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -501,13 +707,37 @@ function ProgramFormDialogInner({ open, onOpenChange, program, departments, onSa
           </div>
         </LiyonDialogBody>
 
-        <LiyonDialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            ยกเลิก
-          </Button>
-          <Button type="submit" disabled={loading}>
-            {loading ? "กำลังบันทึก..." : isEditing ? "บันทึกการแก้ไข" : "บันทึกหลักสูตร"}
-          </Button>
+        <LiyonDialogFooter className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => jsonFileInputRef.current?.click()}
+              className="h-8 px-2.5 text-xs gap-1.5 text-muted-foreground hover:text-foreground cursor-pointer"
+            >
+              <Upload className="h-3.5 w-3.5" />
+              {t("curriculum.btn.importJson")}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleExportJson}
+              className="h-8 px-2.5 text-xs gap-1.5 text-muted-foreground hover:text-foreground cursor-pointer"
+            >
+              <Download className="h-3.5 w-3.5" />
+              {t("curriculum.btn.exportJson")}
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              ยกเลิก
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? "กำลังบันทึก..." : isEditing ? "บันทึกการแก้ไข" : "บันทึกหลักสูตร"}
+            </Button>
+          </div>
         </LiyonDialogFooter>
       </form>
     </LiyonDialog>

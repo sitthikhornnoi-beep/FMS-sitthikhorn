@@ -18,4 +18,10 @@ export type {
   SemesterPlanInput,
   CourseGroupInput,
 } from "./_internal/validations";
-
+export {
+  exportProgramToJson,
+  parseProgramJson,
+  type ProgramJson,
+  type ProgramExportData,
+  type ParseProgramJsonResult,
+} from "./_internal/json-helpers";
