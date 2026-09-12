@@ -20,42 +20,54 @@ export interface NavGroup { label: string; items: NavItem[] }
 export interface NavCrumb { title: string; href: string }
 
 export const sidebarGroups: NavGroup[] = [
-  { label: "nav.group.overview", items: [{ title: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard }] },
+  // 1. ภาพรวมระบบ (Overview)
   {
-    label: "document.nav",
-    items: [{ title: "document.nav", href: "/admin/documents", icon: FileText, permission: DOCUMENTS_P.documentRead }],
+    label: "nav.group.overview",
+    items: [{ title: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard }],
   },
+
+  // 2. งานวิชาการและการศึกษา (Academic Affairs & Curriculum)
   {
-    label: "news.nav",
-    items: [{ title: "news.nav", href: "/admin/news", icon: Newspaper, permission: NEWS_P.newsRead }],
+    label: "nav.group.academic",
+    items: [
+      { title: "curriculum.nav", href: "/admin/programs", icon: BookOpen, permission: CURRICULUM_P.curriculumRead },
+      { title: "personnel.nav", href: "/admin/personnel", icon: GraduationCap, permission: PERSONNEL_P.personnelRead },
+    ],
   },
+
+  // 3. งานบริหารและบริการทั่วไป (Operations & Administrative Services)
   {
-    label: "personnel.nav",
-    items: [{ title: "personnel.nav", href: "/admin/personnel", icon: GraduationCap, permission: PERSONNEL_P.personnelRead }],
+    label: "nav.group.operations",
+    items: [
+      { title: "document.nav", href: "/admin/documents", icon: FileText, permission: DOCUMENTS_P.documentRead },
+      { title: "booking.nav", href: "/admin/booking", icon: Calendar, permission: BOOKING_P.bookingRead },
+      { title: "news.nav", href: "/admin/news", icon: Newspaper, permission: NEWS_P.newsRead },
+    ],
   },
+
+  // 4. การจัดการระบบและความปลอดภัย (System & Security)
   {
-    label: "booking.nav",
-    items: [{ title: "booking.nav", href: "/admin/booking", icon: Calendar, permission: BOOKING_P.bookingRead }],
+    label: "nav.group.system",
+    items: [
+      {
+        title: "nav.users",
+        href: "/users",
+        icon: Users,
+        permission: P.usersRead,
+        children: [
+          { title: "nav.users", href: "/users", permission: P.usersRead },
+          { title: "nav.roles", href: "/users/roles", permission: P.rolesManage },
+        ],
+      },
+      { title: "nav.settings", href: "/settings", icon: Settings, permission: P.settingsManage },
+    ],
   },
-  {
-    label: "curriculum.nav",
-    items: [{ title: "curriculum.nav", href: "/admin/programs", icon: BookOpen, permission: CURRICULUM_P.curriculumRead }],
-  },
+
+  // 5. สำหรับนักพัฒนา / ตัวอย่างระบบ (Developer & Samples)
   {
     label: "nav.group.sample",
     items: [{ title: "sample.nav", href: "/sample", icon: Layers, permission: SAMPLE_P.sampleRead }],
   },
-  {
-    label: "nav.group.users",
-    items: [{
-      title: "nav.users", href: "/users", icon: Users, permission: P.usersRead,
-      children: [
-        { title: "nav.users", href: "/users", permission: P.usersRead },
-        { title: "nav.roles", href: "/users/roles", permission: P.rolesManage },
-      ],
-    }],
-  },
-  { label: "nav.group.settings", items: [{ title: "nav.settings", href: "/settings", icon: Settings, permission: P.settingsManage }] },
 ];
 
 type Ctx = Parameters<typeof hasPermission>[0];

@@ -75,6 +75,11 @@ export function AdminSidebarNav() {
     <>
       {groups.map((group, groupIdx) => (
         <div className="grp" key={group.label || `group-${groupIdx}`}>
+          {!collapsed && group.label && (
+            <div className="px-2.5 pt-2 pb-1 text-[10.5px] font-bold tracking-wider uppercase text-muted-foreground/60 select-none truncate">
+              {t(group.label)}
+            </div>
+          )}
           {group.items.map((item) =>
             item.children ? (
               <NavGroup
