@@ -1,6 +1,8 @@
 export const messages = {
   // Navigation & Headers
   "document.nav": { th: "ระบบสารบรรณและอนุมัติเอกสาร", en: "E-Document & Approvals" },
+  "document.nav.inbox": { th: "กล่องเรื่องรอพิจารณา", en: "Pending Action Inbox" },
+  "document.nav.registry": { th: "ทะเบียนสารบรรณกลาง", en: "Central Registry" },
   "document.title": { th: "ระบบบริหารจัดการและอนุมัติเอกสาร", en: "E-Document Management & Approval" },
   "document.subtitle": { th: "จัดการหนังสือราชการ บันทึกข้อความ และการเกษียนลงนามออนไลน์", en: "Manage official memos, incoming/outgoing letters, and electronic approvals" },
   "document.portal.title": { th: "งานสารบรรณและประกาศคณะ", en: "Faculty Registry & Public Orders" },

@@ -2,6 +2,8 @@ import type { Dictionary } from "@/shared/lib/i18n/translate";
 
 export const MESSAGES = {
   "booking.nav": { th: "จองห้องและยานพาหนะ", en: "Booking System" },
+  "booking.nav.calendar": { th: "ปฏิทินและการจอง", en: "Calendar & Bookings" },
+  "booking.nav.resources": { th: "ห้องประชุมและยานพาหนะ", en: "Rooms & Vehicles" },
   "booking.title": { th: "ระบบจองห้องประชุมและยานพาหนะ", en: "Room & Vehicle Booking System" },
   "booking.desc": { th: "บริหารจัดการคำขอจอง ตารางการใช้งานห้องประชุม และการจัดสรรยานพาหนะส่วนกลาง", en: "Manage booking requests, meeting room schedules, and central vehicle allocations" },
   "booking.publicTitle": { th: "ปฏิทินและตารางการใช้ทรัพยากรส่วนกลาง", en: "Public Resource Schedule" },

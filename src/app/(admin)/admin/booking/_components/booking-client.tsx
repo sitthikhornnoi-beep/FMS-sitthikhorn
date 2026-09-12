@@ -45,6 +45,7 @@ import { ApprovalDialog } from "./approval-dialog";
 interface Props {
   initialBookings: BookingDto[];
   initialResources: BookingResourceDto[];
+  initialTab?: "CALENDAR" | "REQUESTS" | "ROOMS" | "VEHICLES";
   canApprove: boolean;
   canManage: boolean;
   canCreate: boolean;
@@ -53,6 +54,7 @@ interface Props {
 export function BookingClient({
   initialBookings,
   initialResources,
+  initialTab = "CALENDAR",
   canApprove,
   canManage,
   canCreate,
@@ -65,7 +67,7 @@ export function BookingClient({
   const [isPending, startTransition] = useTransition();
 
   // Tab State
-  const [activeTab, setActiveTab] = useState<"CALENDAR" | "REQUESTS" | "ROOMS" | "VEHICLES">("CALENDAR");
+  const [activeTab, setActiveTab] = useState<"CALENDAR" | "REQUESTS" | "ROOMS" | "VEHICLES">(initialTab);
 
   // Filter State
   const [filterType, setFilterType] = useState("");

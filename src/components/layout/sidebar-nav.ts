@@ -48,8 +48,26 @@ export const sidebarGroups: NavGroup[] = [
   {
     label: "nav.group.operations",
     items: [
-      { title: "document.nav", href: "/admin/documents", icon: FileText, permission: DOCUMENTS_P.documentRead },
-      { title: "booking.nav", href: "/admin/booking", icon: Calendar, permission: BOOKING_P.bookingRead },
+      {
+        title: "document.nav",
+        href: "/admin/documents",
+        icon: FileText,
+        permission: DOCUMENTS_P.documentRead,
+        children: [
+          { title: "document.nav.inbox", href: "/admin/documents", permission: DOCUMENTS_P.documentRead },
+          { title: "document.nav.registry", href: "/admin/documents/registry", permission: DOCUMENTS_P.documentRead },
+        ],
+      },
+      {
+        title: "booking.nav",
+        href: "/admin/booking",
+        icon: Calendar,
+        permission: BOOKING_P.bookingRead,
+        children: [
+          { title: "booking.nav.calendar", href: "/admin/booking", permission: BOOKING_P.bookingRead },
+          { title: "booking.nav.resources", href: "/admin/booking/resources", permission: BOOKING_P.bookingRead },
+        ],
+      },
       { title: "news.nav", href: "/admin/news", icon: Newspaper, permission: NEWS_P.newsRead },
     ],
   },

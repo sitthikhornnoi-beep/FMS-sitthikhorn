@@ -53,6 +53,7 @@ interface Props {
   departments: Array<{ id: string; nameTh: string; nameEn: string }>;
   users: Array<{ id: string; name: string }>;
   currentUserId: string;
+  initialTab?: "inbox" | "mySubmissions" | "registry" | "archive";
   canCreate: boolean;
   canEndorse: boolean;
   canApprove: boolean;
@@ -65,6 +66,7 @@ export function DocumentsClient({
   departments,
   users,
   currentUserId,
+  initialTab = "inbox",
   canCreate,
   canEndorse,
   canApprove,
@@ -75,7 +77,7 @@ export function DocumentsClient({
 
   const [documents, setDocuments] = useState<DocumentDto[]>(initialDocuments);
   const [stats] = useState<DocumentStatsDto>(initialStats);
-  const [activeTab, setActiveTab] = useState<"inbox" | "mySubmissions" | "registry" | "archive">("inbox");
+  const [activeTab, setActiveTab] = useState<"inbox" | "mySubmissions" | "registry" | "archive">(initialTab);
 
   // Filters
   const [search, setSearch] = useState("");
