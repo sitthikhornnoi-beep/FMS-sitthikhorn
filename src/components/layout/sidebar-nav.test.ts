@@ -21,8 +21,14 @@ describe("sidebar-nav", () => {
   });
   it("getActiveNavChain เลือก href ที่ตรงที่สุด", () => {
     expect(getActiveNavChain("/users/roles").map((c) => c.href)).toEqual(["/users", "/users/roles"]);
+    expect(getActiveNavChain("/admin/departments").map((c) => c.href)).toEqual(["/admin/programs", "/admin/departments"]);
     expect(getActiveNavChain("/settings").map((c) => c.href)).toEqual(["/settings"]);
     expect(getActiveNavChain("/nowhere")).toEqual([]);
   });
-  it("โครงสร้างเมนูมีกลุ่มเมนูหลัก", () => expect(sidebarGroups.length).toBeGreaterThanOrEqual(3));
+  it("โครงสร้างเมนูมีกลุ่มเมนูหลักและเมนูย่อยหลักสูตร", () => {
+    expect(sidebarGroups.length).toBeGreaterThanOrEqual(3);
+    const academicGroup = sidebarGroups.find((g) => g.label === "nav.group.academic");
+    const curriculumItem = academicGroup?.items.find((i) => i.title === "curriculum.nav");
+    expect(curriculumItem?.children?.map((c) => c.href)).toEqual(["/admin/programs", "/admin/departments"]);
+  });
 });

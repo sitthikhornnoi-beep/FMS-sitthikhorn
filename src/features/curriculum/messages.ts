@@ -1,5 +1,7 @@
 export const MESSAGES = {
   "curriculum.nav": { th: "จัดการหลักสูตร", en: "Curriculum" },
+  "curriculum.nav.programs": { th: "รายชื่อหลักสูตร", en: "Degree Programs" },
+  "curriculum.nav.departments": { th: "ภาควิชา / ส่วนงาน", en: "Departments & Divisions" },
   "curriculum.title": { th: "ระบบจัดการหลักสูตร", en: "Curriculum & Programs" },
   "curriculum.subtitle": { th: "จัดการข้อมูลหลักสูตรการศึกษา โครงสร้างหน่วยกิต และแผนการเรียน", en: "Manage academic programs, credit structures, and study plans" },
   "curriculum.list.title": { th: "รายชื่อหลักสูตรทั้งหมด", en: "All Academic Programs" },

@@ -30,7 +30,16 @@ export const sidebarGroups: NavGroup[] = [
   {
     label: "nav.group.academic",
     items: [
-      { title: "curriculum.nav", href: "/admin/programs", icon: BookOpen, permission: CURRICULUM_P.curriculumRead },
+      {
+        title: "curriculum.nav",
+        href: "/admin/programs",
+        icon: BookOpen,
+        permission: CURRICULUM_P.curriculumRead,
+        children: [
+          { title: "curriculum.nav.programs", href: "/admin/programs", permission: CURRICULUM_P.curriculumRead },
+          { title: "curriculum.nav.departments", href: "/admin/departments", permission: CURRICULUM_P.curriculumRead },
+        ],
+      },
       { title: "personnel.nav", href: "/admin/personnel", icon: GraduationCap, permission: PERSONNEL_P.personnelRead },
     ],
   },
@@ -50,13 +59,13 @@ export const sidebarGroups: NavGroup[] = [
     label: "nav.group.system",
     items: [
       {
-        title: "nav.users",
+        title: "nav.usersManagement",
         href: "/users",
         icon: Users,
         permission: P.usersRead,
         children: [
-          { title: "nav.users", href: "/users", permission: P.usersRead },
-          { title: "nav.roles", href: "/users/roles", permission: P.rolesManage },
+          { title: "nav.usersList", href: "/users", permission: P.usersRead },
+          { title: "nav.rolesManage", href: "/users/roles", permission: P.rolesManage },
         ],
       },
       { title: "nav.settings", href: "/settings", icon: Settings, permission: P.settingsManage },

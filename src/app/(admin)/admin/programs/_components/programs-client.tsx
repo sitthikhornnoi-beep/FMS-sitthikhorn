@@ -37,6 +37,7 @@ import { DepartmentsTab } from "./departments-tab";
 interface Props {
   initialPrograms: ProgramDto[];
   initialDepartments: DepartmentWithProgramsDto[];
+  initialTab?: "programs" | "departments";
   canManage: boolean;
   canCreate: boolean;
 }
@@ -44,6 +45,7 @@ interface Props {
 export function ProgramsAdminClient({
   initialPrograms,
   initialDepartments,
+  initialTab = "programs",
   canManage,
   canCreate,
 }: Props) {
@@ -52,7 +54,7 @@ export function ProgramsAdminClient({
 
   const [programs, setPrograms] = useState<ProgramDto[]>(initialPrograms);
   const [departments, setDepartments] = useState<DepartmentWithProgramsDto[]>(initialDepartments);
-  const [activeTab, setActiveTab] = useState<"programs" | "departments">("programs");
+  const [activeTab, setActiveTab] = useState<"programs" | "departments">(initialTab);
   const [isPending, startTransition] = useTransition();
 
 
