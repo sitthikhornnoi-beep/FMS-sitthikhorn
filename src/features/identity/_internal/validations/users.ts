@@ -43,7 +43,34 @@ export const setUserActiveSchema = z.object({ userId: z.string().uuid(), isActiv
 export const issuePasswordLinkSchema = z.object({ userId: z.string().uuid() });
 export const requestEmailChangeSchema = z.object({ userId: z.string().uuid(), newEmail: emailSchema });
 
+export const exportUsersQuerySchema = z.object({
+  search: z.string().trim().max(100).optional(),
+  status: z.enum(["all", "active", "inactive"]).default("all"),
+  roleId: z.string().uuid().optional(),
+  userIds: z.array(z.string().uuid()).optional(),
+});
+
+export const importUserRowSchema = z.object({
+  email: emailSchema,
+  name: z.string().trim().min(1).max(255),
+  roleCodes: z.array(z.string().trim()).optional().default([]),
+  isActive: z.boolean().optional().default(true),
+  mustChangePassword: z.boolean().optional().default(true),
+});
+
+export const importUsersSchema = z.object({
+  rows: z.array(importUserRowSchema).min(1, "กรุณาระบุข้อมูลอย่างน้อย 1 แถว"),
+  options: z.object({
+    duplicateAction: z.enum(["skip", "update"]).default("skip"),
+    defaultRoleId: z.string().uuid().optional(),
+    sendPasswordEmail: z.boolean().default(true),
+  }),
+});
+
 export type ListUsersQuery = z.infer<typeof listUsersQuerySchema>;
 export type RoleAssignment = z.infer<typeof roleAssignmentSchema>;
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
+export type ExportUsersQuery = z.infer<typeof exportUsersQuerySchema>;
+export type ImportUserRow = z.infer<typeof importUserRowSchema>;
+export type ImportUsersInput = z.infer<typeof importUsersSchema>;

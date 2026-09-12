@@ -8,8 +8,9 @@ import { SUPER_ADMIN_CODE } from "../../permissions";
 import { issueToken, consumeToken, TOKEN_TTL } from "../tokens";
 import { writeAudit } from "../audit";
 import { passwordSetupEmail, emailChangeEmail } from "../email-templates";
-import type { ListUsersQuery, RoleAssignment } from "../validations/users";
+import type { ListUsersQuery, RoleAssignment, ExportUsersQuery, ImportUsersInput } from "../validations/users";
 import type { ScopeType } from "../grants";
+import { generateCsv } from "@/shared/lib/csv";
 
 export interface UserListItem {
   id: string; email: string; name: string; isActive: boolean; mustChangePassword: boolean; lastLoginAt: string | null;
@@ -197,4 +198,322 @@ export async function confirmEmailChange(raw: string): Promise<boolean> {
     }
   });
   return true;
+}
+
+export async function exportUsersToCsv(
+  tenantId: string,
+  q: ExportUsersQuery
+): Promise<{ csv: string; filename: string; count: number }> {
+  const where = {
+    tenantId,
+    ...(q.userIds && q.userIds.length > 0 ? { userId: { in: q.userIds } } : {}),
+    ...(q.status === "active" ? { isActive: true, user: { isActive: true } } : q.status === "inactive" ? { OR: [{ isActive: false }, { user: { isActive: false } }] } : {}),
+    ...(q.roleId ? { userRoles: { some: { roleId: q.roleId } } } : {}),
+    ...(q.search ? { user: { OR: [{ name: { contains: q.search, mode: "insensitive" as const } }, { email: { contains: q.search, mode: "insensitive" as const } }] } } : {}),
+  };
+
+  const rows = await prisma.userTenant.findMany({
+    where,
+    orderBy: { user: { name: "asc" } },
+    include: {
+      user: true,
+      userRoles: { select: roleSelect },
+    },
+  });
+
+  const columns = [
+    { key: "name", label: "ชื่อ-นามสกุล" },
+    { key: "email", label: "อีเมล" },
+    { key: "roles", label: "รหัสบทบาท" },
+    { key: "roleNames", label: "ชื่อบทบาท" },
+    { key: "status", label: "สถานะ" },
+    { key: "mustChangePassword", label: "ต้องเปลี่ยนรหัสผ่าน" },
+    { key: "lastLoginAt", label: "เข้าสู่ระบบล่าสุด" },
+    { key: "createdAt", label: "วันที่สร้างบัญชี" },
+    { key: "id", label: "User ID" },
+  ];
+
+  const data = rows.map((r) => {
+    const roleCodes = r.userRoles.map((ur) => ur.role.code).join(", ");
+    const roleNames = r.userRoles.map((ur) => ur.role.nameTh).join(", ");
+    const isActive = r.isActive && r.user.isActive;
+    return {
+      name: r.user.name,
+      email: r.user.email,
+      roles: roleCodes,
+      roleNames: roleNames,
+      status: isActive ? "เปิดใช้งาน" : "ระงับการใช้งาน",
+      mustChangePassword: r.user.mustChangePassword ? "ใช่" : "ไม่",
+      lastLoginAt: r.user.lastLoginAt ? r.user.lastLoginAt.toISOString() : "-",
+      createdAt: r.user.createdAt.toISOString(),
+      id: r.user.id,
+    };
+  });
+
+  const csv = generateCsv(columns, data);
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const filename = `users_export_${dateStr}.csv`;
+
+  return { csv, filename, count: rows.length };
+}
+
+export interface ImportUserDetail {
+  row: number;
+  email: string;
+  name: string;
+  status: "created" | "updated" | "skipped" | "error";
+  message?: string;
+}
+
+export interface ImportUsersResult {
+  total: number;
+  created: number;
+  updated: number;
+  skipped: number;
+  failed: number;
+  details: ImportUserDetail[];
+}
+
+export async function importUsersFromCsv(
+  actor: Actor,
+  input: ImportUsersInput
+): Promise<ImportUsersResult> {
+  const result: ImportUsersResult = {
+    total: input.rows.length,
+    created: 0,
+    updated: 0,
+    skipped: 0,
+    failed: 0,
+    details: [],
+  };
+
+  // ดึงบทบาททั้งหมดใน tenant นี้มาสร้าง Map เพื่อความรวดเร็ว
+  const allRoles = await prisma.role.findMany({
+    where: { tenantId: actor.tenantId },
+    select: { id: true, code: true, nameTh: true, nameEn: true, isSystem: true },
+  });
+  const roleByCode = new Map<string, typeof allRoles[number]>();
+  const roleById = new Map<string, typeof allRoles[number]>();
+  for (const r of allRoles) {
+    roleByCode.set(r.code.toUpperCase(), r);
+    roleById.set(r.id, r);
+  }
+
+  // หา Default Role
+  let defaultRole = input.options.defaultRoleId ? roleById.get(input.options.defaultRoleId) : null;
+  if (!defaultRole) {
+    defaultRole = allRoles.find((r) => r.code === "STAFF") || allRoles.find((r) => r.code !== SUPER_ADMIN_CODE) || allRoles[0] || null;
+  }
+
+  for (let i = 0; i < input.rows.length; i++) {
+    const row = input.rows[i];
+    const rowNum = i + 1;
+    const email = row.email.toLowerCase().trim();
+    const name = row.name.trim();
+
+    try {
+      if (!email || !name) {
+        throw new Error("ข้อมูลไม่ครบถ้วน: ต้องระบุชื่อและอีเมล");
+      }
+
+      // หาบทบาทสำหรับผู้ใช้นี้
+      const targetRoleIds: string[] = [];
+      if (row.roleCodes && row.roleCodes.length > 0) {
+        for (const codeStr of row.roleCodes) {
+          const trimmed = codeStr.trim().toUpperCase();
+          if (!trimmed) continue;
+          const found = roleByCode.get(trimmed) || roleById.get(codeStr.trim());
+          if (!found) {
+            throw new Error(`ไม่พบบทบาท '${codeStr}' ในระบบ`);
+          }
+          targetRoleIds.push(found.id);
+        }
+      }
+
+      // หากไม่ได้ระบุบทบาท ให้ใช้ default role
+      if (targetRoleIds.length === 0 && defaultRole) {
+        targetRoleIds.push(defaultRole.id);
+      }
+
+      const roleAssignments: RoleAssignment[] = targetRoleIds.map((id) => ({
+        roleId: id,
+        scopeType: "ALL",
+        scopeId: null,
+      }));
+
+      // ตรวจสอบสิทธิ์ว่าผู้กระทำมีสิทธิ์มอบบทบาทเหล่านี้หรือไม่
+      await assertRolesInTenant(roleAssignments, actor.tenantId, prisma);
+      await assertCanAssignRoles(roleAssignments, actor, prisma);
+
+      // ตรวจสอบว่ามีผู้ใช้นี้ในระบบหรือยัง
+      const existingUser = await prisma.user.findUnique({
+        where: { email },
+        include: {
+          userTenants: {
+            where: { tenantId: actor.tenantId },
+            include: { userRoles: { include: { role: true } } },
+          },
+        },
+      });
+
+      const existingMembership = existingUser?.userTenants?.[0];
+
+      if (existingMembership) {
+        // มีผู้ใช้นี้ใน Tenant นี้อยู่แล้ว
+        if (input.options.duplicateAction === "skip") {
+          result.skipped++;
+          result.details.push({
+            row: rowNum,
+            email,
+            name,
+            status: "skipped",
+            message: "ข้าม: มีผู้ใช้งานอีเมลนี้ในระบบแล้ว",
+          });
+          continue;
+        }
+
+        // กรณีเลือก Update
+        assertCanActOnTarget(existingMembership.userRoles, actor);
+
+        await prisma.$transaction(async (tx) => {
+          await tx.user.update({
+            where: { id: existingUser.id },
+            data: {
+              name,
+              isActive: row.isActive ?? existingUser.isActive,
+              mustChangePassword: row.mustChangePassword ?? existingUser.mustChangePassword,
+            },
+          });
+
+          await tx.userTenant.update({
+            where: { id: existingMembership.id },
+            data: { isActive: row.isActive ?? existingMembership.isActive },
+          });
+
+          if (roleAssignments.length > 0) {
+            await tx.userRole.deleteMany({ where: { userTenantId: existingMembership.id } });
+            await tx.userRole.createMany({
+              data: roleAssignments.map((r) => ({ userTenantId: existingMembership.id, ...r })),
+            });
+          }
+
+          await writeAudit(
+            {
+              tenantId: actor.tenantId,
+              actorId: actor.actorId,
+              action: "user.import_update",
+              entity: "user",
+              entityId: existingUser.id,
+              after: { email, name, roles: roleAssignments },
+            },
+            tx
+          );
+        });
+
+        result.updated++;
+        result.details.push({
+          row: rowNum,
+          email,
+          name,
+          status: "updated",
+          message: "อัปเดตข้อมูลสำเร็จ",
+        });
+      } else {
+        // ผู้ใช้ใหม่ใน Tenant นี้
+        let tokenRaw = "";
+
+        await prisma.$transaction(async (tx) => {
+          let targetUserId: string;
+          if (!existingUser) {
+            const created = await tx.user.create({
+              data: {
+                email,
+                name,
+                isActive: row.isActive ?? true,
+                mustChangePassword: row.mustChangePassword ?? true,
+              },
+            });
+            targetUserId = created.id;
+          } else {
+            await tx.user.update({
+              where: { id: existingUser.id },
+              data: { name },
+            });
+            targetUserId = existingUser.id;
+          }
+
+          const ut = await tx.userTenant.create({
+            data: {
+              userId: targetUserId,
+              tenantId: actor.tenantId,
+              isActive: row.isActive ?? true,
+            },
+          });
+
+          if (roleAssignments.length > 0) {
+            await tx.userRole.createMany({
+              data: roleAssignments.map((r) => ({ userTenantId: ut.id, ...r })),
+            });
+          }
+
+          if (input.options.sendPasswordEmail) {
+            const { raw } = await issueToken(
+              { userId: targetUserId, purpose: "PASSWORD_RESET", ttlMs: TOKEN_TTL.PASSWORD_SETUP },
+              tx
+            );
+            tokenRaw = raw;
+          }
+
+          await writeAudit(
+            {
+              tenantId: actor.tenantId,
+              actorId: actor.actorId,
+              action: "user.import_create",
+              entity: "user",
+              entityId: targetUserId,
+              after: { email, name, roles: roleAssignments },
+            },
+            tx
+          );
+        });
+
+        if (input.options.sendPasswordEmail && tokenRaw) {
+          try {
+            await sendMail({
+              to: email,
+              ...passwordSetupEmail("th", {
+                name,
+                link: setupLink(tokenRaw),
+                hours: 72,
+              }),
+            });
+          } catch (mailErr) {
+            logger.warn("importUsers: failed to send setup email", { email, err: mailErr });
+          }
+        }
+
+        result.created++;
+        result.details.push({
+          row: rowNum,
+          email,
+          name,
+          status: "created",
+          message: "สร้างบัญชีสำเร็จ",
+        });
+      }
+    } catch (err) {
+      result.failed++;
+      const errMsg = err instanceof Error ? err.message : String(err);
+      result.details.push({
+        row: rowNum,
+        email,
+        name,
+        status: "error",
+        message: errMsg,
+      });
+    }
+  }
+
+  return result;
 }
